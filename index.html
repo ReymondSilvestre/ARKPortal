@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ark Portal - SMS</title>
     <style>
-        :root { --primary: #2c3e50; --secondary: #34495e; --accent: #3498db; --bg: #f4f7f6; }
+        :root { --primary: #2c3e50; --secondary: #34495e; --accent: #18bc9c; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: #333; }
         nav { background: var(--primary); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
         .container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
@@ -13,8 +13,9 @@
         .hidden { display: none !important; }
         button { background: var(--accent); color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         input, textarea, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        .status-msg { padding: 10px; color: #721c24; background-color: #f8d7da; border-radius: 5px; margin: 10px 0; }
-        .role-tag { font-size: 0.8rem; background: #e74c3c; padding: 4px 10px; border-radius: 20px; margin-left: 10px; }
+        .role-tag { font-size: 0.8rem; background: #e74c3c; padding: 4px 10px; border-radius: 20px; margin-left: 10px; color: white; }
+        .user-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
+        .pending-box { background: #fff3cd; padding: 20px; border-radius: 10px; text-align: center; border: 1px solid #ffeeba; }
     </style>
 </head>
 <body>
@@ -22,7 +23,7 @@
 <nav>
     <h2 id="display-school-name">School Management</h2>
     <div id="auth-ui">
-        <button id="login-btn">Login with Google</button>
+        <button id="login-btn">Login / Sign Up with Google</button>
         <div id="user-info" class="hidden">
             <span id="user-name"></span><span id="user-role" class="role-tag"></span>
             <button id="logout-btn" style="background:#95a5a6; margin-left:10px;">Logout</button>
@@ -31,46 +32,47 @@
 </nav>
 
 <div class="container">
-    <div id="loading-overlay">Initializing System...</div>
-    <div id="error-display" class="status-msg hidden"></div>
+    <div id="pending-view" class="pending-box hidden">
+        <h3>Account Pending Approval</h3>
+        <p>Your account has been created. Please wait for the Administrator to assign your role (Teacher, Staff, or Student).</p>
+    </div>
 
     <section id="admin-view" class="view hidden">
         <div class="card">
-            <h3>Admin: School Branding</h3>
-            <input type="text" id="school-name-input" placeholder="New School Name">
-            <button id="save-settings">Save Name</button>
+            <h3>Admin: System Management</h3>
+            <label>School Name:</label>
+            <input type="text" id="school-name-input">
+            <button id="save-settings">Save Settings</button>
+            <hr>
+            <h4>User Management (Assign Roles)</h4>
+            <div id="user-list-admin"></div>
         </div>
     </section>
 
     <section id="staff-view" class="view hidden">
         <div class="card">
-            <h3>Staff: Enrollment & Finance</h3>
-            <input type="text" id="enroll-name" placeholder="Student Name">
-            <input type="email" id="enroll-email" placeholder="Student Email">
-            <button id="enroll-btn">Enroll Student</button>
-            <hr>
+            <h3>Staff: Enrollment & Payments</h3>
             <input type="text" id="pay-email" placeholder="Student Email">
-            <input type="number" id="pay-amount" placeholder="Amount to Deduct ($)">
-            <button id="pay-btn" style="background:#27ae60;">Apply Payment</button>
+            <input type="number" id="pay-amount" placeholder="Amount to Deduct">
+            <button id="pay-btn">Post Payment</button>
         </div>
     </section>
 
     <section id="teacher-view" class="view hidden">
         <div class="card">
-            <h3>Teacher: Lesson & Grade Entry</h3>
+            <h3>Teacher: Academic Portal</h3>
             <select id="student-list-select"><option>Select Student...</option></select>
-            <input type="text" id="lesson-title" placeholder="Subject/Topic">
-            <textarea id="grade-input" placeholder="Grades or Lesson Content"></textarea>
-            <button id="send-update">Post to Student</button>
+            <input type="text" id="lesson-title" placeholder="Topic">
+            <textarea id="grade-input" placeholder="Content"></textarea>
+            <button id="send-update">Send to Student</button>
         </div>
     </section>
 
     <section id="student-view" class="view hidden">
         <div class="card">
-            <h3>Student Portal</h3>
-            <p><strong>Balance Due:</strong> <span id="stat-balance">--</span></p>
+            <h3>Student Dashboard</h3>
+            <p><strong>Balance:</strong> <span id="stat-balance">--</span></p>
             <hr>
-            <h4>Notifications & Grades:</h4>
             <ul id="lesson-list"></ul>
         </div>
     </section>
@@ -95,102 +97,97 @@
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
-    // UI ELEMENTS
-    const loginBtn = document.getElementById('login-btn');
-    const logoutBtn = document.getElementById('logout-btn');
-    const userInfo = document.getElementById('user-info');
-    const loadingOverlay = document.getElementById('loading-overlay');
-    const errorDisplay = document.getElementById('error-display');
-    const views = document.querySelectorAll('.view');
-
-    // 1. AUTH LOGIC
-    loginBtn.onclick = async () => {
-        try {
-            await signInWithPopup(auth, provider);
-        } catch (err) {
-            showError("Login Failed: " + err.message);
-        }
-    };
-
-    logoutBtn.onclick = () => signOut(auth).then(() => location.reload());
+    const ADMIN_EMAIL = "reymonde.silvestre@gmail.com";
 
     onAuthStateChanged(auth, async (user) => {
-        loadingOverlay.classList.add('hidden');
         if (user) {
-            loginBtn.classList.add('hidden');
-            userInfo.classList.remove('hidden');
+            document.getElementById('login-btn').classList.add('hidden');
+            document.getElementById('user-info').classList.remove('hidden');
             document.getElementById('user-name').innerText = user.displayName;
-            
-            try {
-                const userRef = doc(db, "users", user.uid);
-                const userSnap = await getDoc(userRef);
 
-                if (userSnap.exists()) {
-                    const role = userSnap.data().role || 'student';
-                    renderDashboard(role, user);
-                } else {
-                    // AUTO-REGISTER NEW USER AS STUDENT
-                    const defaultData = { name: user.displayName, email: user.email, role: 'student', balance: 0 };
-                    await setDoc(userRef, defaultData);
-                    renderDashboard('student', user);
-                }
-            } catch (err) {
-                showError("Permission Denied: Check Firestore Rules! " + err.message);
+            const userRef = doc(db, "users", user.uid);
+            let userSnap = await getDoc(userRef);
+
+            // AUTO-ADMIN FOR REYMONDE
+            if (user.email === ADMIN_EMAIL && (!userSnap.exists() || userSnap.data().role !== 'admin')) {
+                await setDoc(userRef, { name: user.displayName, email: user.email, role: 'admin' }, { merge: true });
+                userSnap = await getDoc(userRef);
+            } 
+            // NEW USERS START AS GUEST
+            else if (!userSnap.exists()) {
+                await setDoc(userRef, { name: user.displayName, email: user.email, role: 'guest', balance: 0 });
+                userSnap = await getDoc(userRef);
             }
+
+            const role = userSnap.data().role;
+            renderView(role, user);
+        } else {
+            document.getElementById('login-btn').classList.remove('hidden');
+            document.getElementById('user-info').classList.add('hidden');
+            document.querySelectorAll('.view, .pending-box').forEach(v => v.classList.add('hidden'));
         }
     });
 
-    function renderDashboard(role, user) {
-        views.forEach(v => v.classList.add('hidden'));
+    function renderView(role, user) {
+        document.querySelectorAll('.view, .pending-box').forEach(v => v.classList.add('hidden'));
         document.getElementById('user-role').innerText = role.toUpperCase();
-        const view = document.getElementById(`${role}-view`);
-        if(view) view.classList.remove('hidden');
 
-        // Initializers
-        listenForSchoolName();
-        if(role === 'teacher') loadStudents();
-        if(role === 'student') loadStudentContent(user.email);
+        if (role === 'guest') {
+            document.getElementById('pending-view').classList.remove('hidden');
+        } else {
+            const view = document.getElementById(`${role}-view`);
+            if (view) view.classList.remove('hidden');
+            
+            if (role === 'admin') loadAdminTools();
+            if (role === 'teacher') loadTeacherTools();
+            if (role === 'student') loadStudentTools(user.email);
+            listenForSchoolName();
+        }
     }
 
-    function showError(msg) {
-        errorDisplay.innerText = msg;
-        errorDisplay.classList.remove('hidden');
+    // --- ADMIN LOGIC ---
+    function loadAdminTools() {
+        onSnapshot(collection(db, "users"), (snap) => {
+            const list = document.getElementById('user-list-admin');
+            list.innerHTML = "";
+            snap.forEach(uDoc => {
+                const u = uDoc.data();
+                const div = document.createElement('div');
+                div.className = 'user-row';
+                div.innerHTML = `
+                    <span>${u.name} (${u.role})</span>
+                    <select onchange="window.updateUserRole('${uDoc.id}', this.value)">
+                        <option value="">Change Role</option>
+                        <option value="admin">Admin</option>
+                        <option value="staff">Staff</option>
+                        <option value="teacher">Teacher</option>
+                        <option value="student">Student</option>
+                    </select>
+                `;
+                list.appendChild(div);
+            });
+        });
     }
 
-    // 2. ADMIN ACTIONS
+    window.updateUserRole = async (uid, newRole) => {
+        if (!newRole) return;
+        await updateDoc(doc(db, "users", uid), { role: newRole });
+        alert("Role Updated!");
+    };
+
     document.getElementById('save-settings').onclick = async () => {
         const name = document.getElementById('school-name-input').value;
         await setDoc(doc(db, "settings", "branding"), { schoolName: name }, { merge: true });
-        alert("Branding Updated!");
     };
 
     function listenForSchoolName() {
-        onSnapshot(doc(db, "settings", "branding"), (snap) => {
-            if(snap.exists()) document.getElementById('display-school-name').innerText = snap.data().schoolName;
+        onSnapshot(doc(db, "settings", "branding"), (s) => {
+            if(s.exists()) document.getElementById('display-school-name').innerText = s.data().schoolName;
         });
     }
 
-    // 3. STAFF ACTIONS
-    document.getElementById('enroll-btn').onclick = async () => {
-        const name = document.getElementById('enroll-name').value;
-        const email = document.getElementById('enroll-email').value;
-        await addDoc(collection(db, "users"), { name, email, role: 'student', balance: 0 });
-        alert("Student Added to Masterlist!");
-    };
-
-    document.getElementById('pay-btn').onclick = async () => {
-        const email = document.getElementById('pay-email').value;
-        const amt = Number(document.getElementById('pay-amount').value);
-        const q = query(collection(db, "users"), where("email", "==", email));
-        const snap = await getDocs(q);
-        snap.forEach(async (u) => {
-            await updateDoc(doc(db, "users", u.id), { balance: (u.data().balance || 0) - amt });
-        });
-        alert("Payment Applied!");
-    };
-
-    // 4. TEACHER ACTIONS
-    async function loadStudents() {
+    // --- TEACHER/STAFF/STUDENT FUNCTIONS (Existing Logic) ---
+    async function loadTeacherTools() {
         const q = query(collection(db, "users"), where("role", "==", "student"));
         const snap = await getDocs(q);
         document.getElementById('student-list-select').innerHTML = snap.docs.map(d => `<option value="${d.data().email}">${d.data().name}</option>`).join('');
@@ -201,20 +198,22 @@
             studentEmail: document.getElementById('student-list-select').value,
             title: document.getElementById('lesson-title').value,
             content: document.getElementById('grade-input').value,
-            timestamp: new Date().toLocaleString()
+            date: new Date().toLocaleDateString()
         });
-        alert("Posted!");
+        alert("Sent!");
     };
 
-    // 5. STUDENT ACTIONS
-    function loadStudentContent(email) {
+    function loadStudentTools(email) {
         onSnapshot(query(collection(db, "users"), where("email", "==", email)), (snap) => {
-            snap.forEach(d => document.getElementById('stat-balance').innerText = `$${d.data().balance}`);
+            snap.forEach(d => document.getElementById('stat-balance').innerText = "₱" + d.data().balance);
         });
         onSnapshot(query(collection(db, "updates"), where("studentEmail", "==", email)), (snap) => {
             document.getElementById('lesson-list').innerHTML = snap.docs.map(d => `<li><strong>${d.data().title}</strong>: ${d.data().content}</li>`).join('');
         });
     }
+
+    document.getElementById('login-btn').onclick = () => signInWithPopup(auth, provider);
+    document.getElementById('logout-btn').onclick = () => signOut(auth).then(() => location.reload());
 </script>
 </body>
 </html>
