@@ -18,18 +18,15 @@
         .btn-danger { background: var(--danger); }
         input, textarea, select { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-size: 14px; }
         
-        /* Registrar UI Updates */
+        /* Registrar & Admin UI */
         .req-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; background: #f8fafb; padding: 15px; border-radius: 8px; border: 1px solid #e1e8ed; }
         .req-tag { display: flex; align-items: center; justify-content: space-between; background: white; padding: 8px 12px; border-radius: 6px; border: 1px solid #ddd; font-size: 13px; }
+        .user-row { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee; gap: 15px; }
         
         .role-tag { font-size: 0.75rem; background: var(--danger); padding: 4px 10px; border-radius: 20px; color: white; margin-left: 10px; text-transform: uppercase; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
-        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
-        th { background: #f4f7f6; color: var(--secondary); }
         
-        .receipt-card { border-left: 5px solid #27ae60; background: #fafffa; padding: 15px; margin-bottom: 10px; position: relative; }
-        .receipt-card small { color: #666; }
+        .receipt-card { border-left: 5px solid #27ae60; background: #fafffa; padding: 15px; margin-bottom: 10px; border-radius: 0 8px 8px 0; box-shadow: 2px 2px 5px rgba(0,0,0,0.03); }
     </style>
 </head>
 <body>
@@ -48,8 +45,27 @@
 <div class="container">
     <div id="guest-view" class="card hidden" style="text-align:center; padding: 50px;">
         <h2>Access Pending</h2>
-        <p>Please contact the Administrator to assign your system role.</p>
+        <p>Welcome to Ark Portal. Please contact the Administrator to assign your system role.</p>
     </div>
+
+    <section id="admin-view" class="view hidden">
+        <div class="card">
+            <h3>System Administration</h3>
+            <div class="grid">
+                <div>
+                    <label>School Branding Name:</label>
+                    <input type="text" id="school-name-input" placeholder="Enter School Name">
+                    <button id="save-settings" style="width:100%">Update Portal Branding</button>
+                </div>
+                <div>
+                    <p>Use this panel to manage staff permissions. Changes take effect immediately.</p>
+                </div>
+            </div>
+            <h4>Registered Users & Role Management</h4>
+            <div id="user-list-admin" style="background:#fff; border-radius:8px; border:1px solid #eee;">
+                </div>
+        </div>
+    </section>
 
     <section id="registrar-view" class="view hidden">
         <div class="card">
@@ -66,13 +82,13 @@
                 <input type="email" id="reg-email" placeholder="Student Google Email">
             </div>
             
-            <h4 style="margin-top:20px;">Requirements Management</h4>
+            <h4 style="margin-top:20px;">Requirements Checklist</h4>
             <div id="req-list-container" class="req-grid"></div>
             <div style="margin-top:10px; display: flex; gap:10px;">
-                <input type="text" id="new-req-input" placeholder="New Requirement Name..." style="flex:1">
-                <button onclick="addRequirementItem()" class="btn-outline">Add Field</button>
+                <input type="text" id="new-req-input" placeholder="New requirement (e.g. Form 138)..." style="flex:1">
+                <button onclick="addRequirementItem()" class="btn-outline">Add to List</button>
             </div>
-            <button id="enroll-btn" style="margin-top:25px; width:100%; height: 50px;">REGISTER STUDENT</button>
+            <button id="enroll-btn" style="margin-top:25px; width:100%; height: 50px; background:var(--primary);">FINALIZE REGISTRATION</button>
         </div>
     </section>
 
@@ -85,20 +101,21 @@
             
             <div class="grid">
                 <div>
-                    <h4>Post Payment</h4>
+                    <h4>Post New Payment</h4>
                     <select id="pay-student-select"><option>Select Student...</option></select>
-                    <input type="text" id="pay-desc" placeholder="Payment Description (e.g. Tuition Phase 1)">
+                    <input type="text" id="pay-desc" placeholder="Description (e.g. 1st Monthly)">
                     <select id="pay-type-select">
                         <option value="Tuition Fee">Tuition Fee</option>
                         <option value="Misc Fee">Misc Fee</option>
                         <option value="Uniform">Uniform</option>
+                        <option value="Books">Books</option>
                     </select>
                     <input type="number" id="pay-amount" placeholder="Amount (PHP)">
                     <button id="pay-btn" style="width:100%;">Process & Sync Receipt</button>
                 </div>
                 <div>
-                    <h4>Payment Logs</h4>
-                    <div id="finance-log-container" style="max-height: 300px; overflow-y: auto;">
+                    <h4>Real-time Payment Logs</h4>
+                    <div id="finance-log-container" style="max-height: 400px; overflow-y: auto; background: #f9f9f9; padding: 10px; border-radius: 8px;">
                         <p>Loading records...</p>
                     </div>
                 </div>
@@ -109,13 +126,13 @@
     <section id="student-view" class="view hidden">
         <div class="grid">
             <div class="card">
-                <h3>Financial Statement</h3>
+                <h3>My Official Receipts</h3>
                 <div id="student-receipt-list">
                     <p>No payment records found.</p>
                 </div>
             </div>
             <div class="card">
-                <h3>Academic & Schedule</h3>
+                <h3>Student Information</h3>
                 <div id="display-schedule"></div>
                 <div id="lesson-list"></div>
             </div>
@@ -147,9 +164,12 @@
             const userRef = doc(db, "users", user.uid);
             let userSnap = await getDoc(userRef);
             
-            // Check if Super Admin
+            // Auto-assign Admin for the primary email
             if (user.email === "reymonde.silvestre@gmail.com") {
                 await setDoc(userRef, { name: user.displayName, email: user.email, role: 'admin' }, { merge: true });
+                userSnap = await getDoc(userRef);
+            } else if (!userSnap.exists()) {
+                await setDoc(userRef, { name: user.displayName, email: user.email, role: 'guest' });
                 userSnap = await getDoc(userRef);
             }
 
@@ -157,6 +177,10 @@
             document.getElementById('user-info').classList.remove('hidden');
             document.getElementById('user-name').innerText = user.displayName;
             switchView(userSnap.data()?.role || 'guest', user);
+        } else {
+            document.getElementById('login-btn').classList.remove('hidden');
+            document.getElementById('user-info').classList.add('hidden');
+            document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
         }
     });
 
@@ -166,10 +190,49 @@
         const view = document.getElementById(`${role}-view`);
         if(view) view.classList.remove('hidden');
 
+        // Initialize specific modules
+        if(role === 'admin') initAdmin();
         if(role === 'registrar') initRegistrar();
         if(role === 'finance') initFinance();
         if(role === 'student') initStudent(user);
+        
+        // Always listen for branding
+        onSnapshot(doc(db, "settings", "branding"), (s) => {
+            if(s.exists()) document.getElementById('display-school-name').innerText = s.data().schoolName;
+        });
     }
+
+    // --- ADMIN LOGIC ---
+    function initAdmin() {
+        onSnapshot(collection(db, "users"), (snap) => {
+            const container = document.getElementById('user-list-admin');
+            container.innerHTML = snap.docs.map(uDoc => {
+                const u = uDoc.data();
+                return `
+                <div class="user-row">
+                    <div style="flex:1"><strong>${u.name}</strong><br><small>${u.email}</small></div>
+                    <div class="role-tag" style="background:var(--secondary)">${u.role}</div>
+                    <select onchange="window.updateUserRole('${uDoc.id}', this.value)" style="width:130px">
+                        <option value="">Set Role...</option>
+                        <option value="registrar">Registrar</option>
+                        <option value="finance">Finance</option>
+                        <option value="student">Student</option>
+                        <option value="guest">Guest</option>
+                    </select>
+                </div>`;
+            }).join('');
+        });
+    }
+
+    window.updateUserRole = async (id, role) => {
+        if(role) { await updateDoc(doc(db, "users", id), { role }); alert("Role updated successfully!"); }
+    };
+
+    document.getElementById('save-settings').onclick = async () => {
+        const val = document.getElementById('school-name-input').value;
+        await setDoc(doc(db, "settings", "branding"), { schoolName: val }, { merge: true });
+        alert("Branding Updated!");
+    };
 
     // --- REGISTRAR LOGIC ---
     let reqs = ["Birth Certificate", "Report Card", "Good Moral"];
@@ -184,7 +247,7 @@
         cont.innerHTML = reqs.map((r, i) => `
             <div class="req-tag">
                 <span><input type="checkbox" class="enroll-check"> ${r}</span>
-                <span onclick="removeReq(${i})" style="cursor:pointer; color:red">×</span>
+                <span onclick="removeReq(${i})" style="cursor:pointer; color:red; font-weight:bold;">×</span>
             </div>
         `).join('');
     }
@@ -193,29 +256,29 @@
 
     document.getElementById('enroll-btn').onclick = async () => {
         const email = document.getElementById('reg-email').value;
+        if(!email) return alert("Email is required");
         await addDoc(collection(db, "users"), {
             name: `${document.getElementById('reg-fname').value} ${document.getElementById('reg-lname').value}`,
             email: email,
             role: 'student',
             enrolledAt: new Date().toLocaleDateString()
         });
-        alert("Student Registered in Database!");
+        alert("Student record created!");
     };
 
     // --- FINANCE LOGIC ---
     async function initFinance() {
-        // Load Students for dropdown
         onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
             document.getElementById('pay-student-select').innerHTML = snap.docs.map(d => `<option value="${d.data().email}">${d.data().name}</option>`).join('');
         });
 
-        // Load Global Payment Logs
         onSnapshot(query(collection(db, "payments"), orderBy("timestamp", "desc")), (snap) => {
             const cont = document.getElementById('finance-log-container');
+            if(snap.empty) { cont.innerHTML = "No payments found."; return; }
             cont.innerHTML = snap.docs.map(d => `
-                <div style="font-size:12px; border-bottom:1px solid #eee; padding:5px;">
-                    <strong>${d.data().studentEmail}</strong> - ₱${d.data().amount} <br>
-                    <small>${d.data().description} (${d.data().date})</small>
+                <div style="font-size:12px; border-bottom:1px solid #eee; padding:8px; display:flex; justify-content:space-between;">
+                    <div><strong>${d.data().studentEmail}</strong><br>${d.data().description}</div>
+                    <div style="text-align:right">₱${d.data().amount}<br><small>${d.data().date}</small></div>
                 </div>
             `).join('');
         });
@@ -231,15 +294,18 @@
             timestamp: new Date()
         };
         await addDoc(collection(db, "payments"), payData);
-        alert("Payment Recorded & Syncing to Student Dashboard!");
+        alert("Receipt Issued & Synced to Student!");
     };
 
     window.exportToExcel = async () => {
         const querySnapshot = await getDocs(collection(db, "payments"));
-        const data = querySnapshot.docs.map(doc => doc.data());
+        const data = querySnapshot.docs.map(doc => {
+            const d = doc.data();
+            return { Date: d.date, Student: d.studentEmail, Amount: d.amount, Type: d.type, Note: d.description };
+        });
         const worksheet = XLSX.utils.json_to_sheet(data);
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Payments");
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Payment Records");
         XLSX.writeFile(workbook, "Ark_Portal_Payments.xlsx");
     };
 
@@ -247,11 +313,11 @@
     function initStudent(user) {
         onSnapshot(query(collection(db, "payments"), where("studentEmail", "==", user.email)), (snap) => {
             const cont = document.getElementById('student-receipt-list');
-            if(snap.empty) { cont.innerHTML = "No payments yet."; return; }
+            if(snap.empty) { cont.innerHTML = "No payment records found."; return; }
             cont.innerHTML = snap.docs.map(d => `
                 <div class="receipt-card">
                     <strong>${d.data().description}</strong><br>
-                    <small>Type: ${d.data().type} | Date: ${d.data().date}</small>
+                    <small>${d.data().type} | ${d.data().date}</small>
                     <h3 style="margin:5px 0; color:#27ae60;">₱${Number(d.data().amount).toLocaleString()}</h3>
                 </div>
             `).join('');
