@@ -3,24 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ark Portal - Comprehensive SMS</title>
+    <title>Ark Portal - Advanced SMS</title>
     <style>
-        :root { --primary: #2c3e50; --secondary: #34495e; --accent: #18bc9c; --bg: #f4f7f6; --danger: #e74c3c; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: #333; }
+        :root { --primary: #2c3e50; --secondary: #34495e; --accent: #18bc9c; --bg: #f4f7f6; --danger: #e74c3c; --info: #3498db; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: var(--bg); color: #333; }
         nav { background: var(--primary); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .container { max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }
-        .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .container { max-width: 1100px; margin: 2rem auto; padding: 0 1rem; }
+        .card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #eee; }
         .hidden { display: none !important; }
-        button { background: var(--accent); color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        button:hover { opacity: 0.9; transform: translateY(-1px); }
-        input, textarea, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        .role-tag { font-size: 0.8rem; background: var(--danger); padding: 4px 12px; border-radius: 20px; color: white; margin-left: 10px; text-transform: uppercase; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .user-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; background: #fff; }
-        .pending-box { background: #fff3cd; padding: 30px; border-radius: 12px; text-align: center; border: 1px solid #ffeeba; margin-top: 50px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        button { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+        button:hover { opacity: 0.9; }
+        .btn-secondary { background: var(--secondary); }
+        input, textarea, select { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-size: 14px; }
+        .role-tag { font-size: 0.75rem; background: var(--danger); padding: 4px 10px; border-radius: 20px; color: white; margin-left: 10px; text-transform: uppercase; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .flex-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .requirement-item { display: flex; align-items: center; gap: 10px; background: #f9f9f9; padding: 5px 10px; border-radius: 4px; margin-bottom: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
-        .stat-card { background: #ebf5fb; padding: 20px; border-radius: 8px; text-align: center; }
+        .stat-card { background: #fff; border-left: 5px solid var(--accent); padding: 15px; border-radius: 8px; }
+        .receipt-preview { border: 2px dashed #ccc; padding: 20px; margin-top: 10px; font-family: 'Courier New', Courier, monospace; }
     </style>
 </head>
 <body>
@@ -37,47 +39,83 @@
 </nav>
 
 <div class="container">
-    <div id="guest-view" class="pending-box hidden">
-        <h2 style="color: #856404;">Access Restricted</h2>
-        <p>Welcome to Ark Portal. Your account is currently <strong>Pending Approval</strong>.</p>
-        <p>Please contact <em>reymonde.silvestre@gmail.com</em> to assign your role.</p>
+    <div id="guest-view" class="card hidden" style="text-align:center; padding: 50px;">
+        <h2 style="color: #856404;">Pending Approval</h2>
+        <p>Welcome. Your account is registered but access is restricted. Contact admin to assign your role.</p>
     </div>
 
     <section id="admin-view" class="view hidden">
         <div class="card">
-            <h3>System Administrator Dashboard</h3>
+            <h3>System Admin: User Controls</h3>
             <div class="grid">
                 <div>
                     <label>School Name:</label>
-                    <input type="text" id="school-name-input" placeholder="e.g. Ark International Academy">
+                    <input type="text" id="school-name-input" placeholder="Ark Academy">
                     <button id="save-settings">Update Branding</button>
                 </div>
-                <div class="stat-card">
-                    <h4>Quick Actions</h4>
-                    <p>Manage users below to grant access to Staff, Teachers, or Students.</p>
-                </div>
             </div>
-            <hr>
-            <h4>User Masterlist & Role Assignment</h4>
+            <h4>Current System Users</h4>
             <div id="user-list-admin"></div>
         </div>
     </section>
 
-    <section id="staff-view" class="view hidden">
+    <section id="registrar-view" class="view hidden">
         <div class="card">
-            <h3>Registrar & Bursar Portal</h3>
+            <h3>Registrar: Student Enrollment</h3>
+            <div class="grid">
+                <input type="text" id="reg-lname" placeholder="Last Name">
+                <input type="text" id="reg-fname" placeholder="First Name">
+                <input type="text" id="reg-mname" placeholder="Middle Name">
+                <input type="number" id="reg-age" placeholder="Age">
+                <input type="date" id="reg-bday" placeholder="Birthday">
+                <input type="text" id="reg-contact" placeholder="Contact No.">
+                <input type="text" id="reg-address" placeholder="Home Address">
+                <input type="text" id="reg-guardian" placeholder="Contact Person (Guardian)">
+                <input type="email" id="reg-email" placeholder="Google Account Email">
+            </div>
+            
+            <h4>Requirement Checklist</h4>
+            <div id="req-list-container">
+                </div>
+            <div class="flex-row">
+                <input type="text" id="new-req-input" placeholder="Add new requirement..." style="width: 200px;">
+                <button onclick="addRequirementItem()">+</button>
+            </div>
+            <button id="enroll-btn" style="margin-top:20px; width:100%;">Finalize Enrollment</button>
+        </div>
+
+        <div class="card">
+            <h3>Class Schedule Management</h3>
+            <select id="sched-student-select"><option>Loading Students...</option></select>
+            <input type="text" id="sched-img-url" placeholder="Paste Schedule Image URL (or use Firebase Storage link)">
+            <button id="save-sched-btn" class="btn-secondary">Upload/Link Schedule</button>
+        </div>
+    </section>
+
+    <section id="finance-view" class="view hidden">
+        <div class="card">
+            <h3>Bursar & Finance Office</h3>
             <div class="grid">
                 <div>
-                    <h4>Enroll New Student</h4>
-                    <input type="text" id="enroll-name" placeholder="Student Full Name">
-                    <input type="email" id="enroll-email" placeholder="Student Google Email">
-                    <button id="enroll-btn">Confirm Enrollment</button>
+                    <h4>Post New Payment</h4>
+                    <select id="pay-student-select"><option>Select Student...</option></select>
+                    <select id="pay-type-select">
+                        <option value="Tuition Fee">Tuition Fee</option>
+                        <option value="Misc Fee">Misc Fee</option>
+                        <option value="Intrams Fee">Intrams Fee</option>
+                        <option value="Graduation Fee">Graduation Fee</option>
+                    </select>
+                    <input type="number" id="pay-amount" placeholder="Amount Paid">
+                    <select id="pay-method">
+                        <option value="Full Payment">Full Payment</option>
+                        <option value="Installment">Installment</option>
+                    </select>
+                    <button id="pay-btn" style="background:#27ae60; width:100%;">Process Payment & Issue Receipt</button>
                 </div>
-                <div>
-                    <h4>Payment Collection</h4>
-                    <input type="text" id="pay-email" placeholder="Search Student Email">
-                    <input type="number" id="pay-amount" placeholder="Amount (USD/PHP)">
-                    <button id="pay-btn" style="background:#27ae60;">Post Payment</button>
+                <div id="receipt-area" class="receipt-preview hidden">
+                    <h4>OFFICIAL RECEIPT</h4>
+                    <div id="receipt-content"></div>
+                    <button onclick="window.print()" style="margin-top:10px; font-size:10px;">Print Receipt</button>
                 </div>
             </div>
         </div>
@@ -85,29 +123,27 @@
 
     <section id="teacher-view" class="view hidden">
         <div class="card">
-            <h3>Faculty Academic Portal</h3>
-            <label>Select Student:</label>
-            <select id="student-list-select"><option>Loading Students...</option></select>
-            <input type="text" id="lesson-title" placeholder="Lesson Topic or Subject Code">
-            <textarea id="grade-input" rows="5" placeholder="Enter grades, feedback, or lesson notes..."></textarea>
-            <button id="send-update">Publish to Student Dashboard</button>
+            <h3>Faculty Academic Updates</h3>
+            <select id="teacher-student-select"></select>
+            <input type="text" id="lesson-title" placeholder="Subject/Topic">
+            <textarea id="grade-input" rows="4" placeholder="Feedback or Grades..."></textarea>
+            <button id="send-update">Post to Student Portal</button>
         </div>
     </section>
 
     <section id="student-view" class="view hidden">
-        <div class="card">
-            <div class="grid">
-                <div>
-                    <h3>Welcome, <span id="student-welcome-name"></span></h3>
-                    <p>Your official academic and financial record.</p>
-                </div>
-                <div class="stat-card" style="background: #18bc9c; color: white;">
-                    <small>CURRENT BALANCE</small>
-                    <h2 id="stat-balance">₱0.00</h2>
-                </div>
+        <div class="grid">
+            <div class="card stat-card">
+                <h3>Balance: <span id="stat-balance" style="color:var(--danger)">₱0.00</span></h3>
+                <p>Status: <span id="stat-status">Active</span></p>
             </div>
-            <hr>
-            <h4>Recent Academic Updates</h4>
+            <div class="card">
+                <h3>My Schedule</h3>
+                <div id="display-schedule">No schedule uploaded yet.</div>
+            </div>
+        </div>
+        <div class="card">
+            <h4>Academic Records</h4>
             <div id="lesson-list"></div>
         </div>
     </section>
@@ -115,7 +151,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, addDoc, onSnapshot, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     const firebaseConfig = {
@@ -143,7 +179,6 @@
             const userRef = doc(db, "users", user.uid);
             let userSnap = await getDoc(userRef);
 
-            // ADMIN BOOTSTRAP
             if (user.email === REYMONDE) {
                 await setDoc(userRef, { name: user.displayName, email: user.email, role: 'admin' }, { merge: true });
                 userSnap = await getDoc(userRef);
@@ -152,8 +187,7 @@
                 userSnap = await getDoc(userRef);
             }
 
-            const role = userSnap.data().role;
-            switchView(role, user);
+            switchView(userSnap.data().role, user);
         } else {
             document.getElementById('login-btn').classList.remove('hidden');
             document.getElementById('user-info').classList.add('hidden');
@@ -162,7 +196,7 @@
     });
 
     function switchView(role, user) {
-        document.querySelectorAll('.view, .pending-box').forEach(v => v.classList.add('hidden'));
+        document.querySelectorAll('.view, #guest-view').forEach(v => v.classList.add('hidden'));
         document.getElementById('user-role').innerText = role;
 
         if (role === 'guest') {
@@ -172,104 +206,148 @@
             if (el) el.classList.remove('hidden');
             
             if (role === 'admin') initAdmin();
+            if (role === 'registrar') initRegistrar();
+            if (role === 'finance') initFinance();
             if (role === 'teacher') initTeacher();
             if (role === 'student') initStudent(user);
-            if (role === 'staff') {} 
+            
             listenToSchoolName();
         }
     }
 
-    // --- LOGIC MODULES ---
+    // --- REGISTRAR LOGIC ---
+    let requirements = ["Birth Certificate", "Form 137", "Good Moral"];
 
-    function initAdmin() {
-        onSnapshot(collection(db, "users"), (snap) => {
-            const container = document.getElementById('user-list-admin');
-            container.innerHTML = "";
-            snap.forEach(uDoc => {
-                const u = uDoc.data();
-                const div = document.createElement('div');
-                div.className = 'user-row card';
-                div.style.padding = "10px";
-                div.innerHTML = `
-                    <div><strong>${u.name}</strong><br><small>${u.email}</small></div>
-                    <div>
-                        Role: <span style="font-weight:bold; color:var(--accent)">${u.role}</span>
-                        <select onchange="window.changeRole('${uDoc.id}', this.value)" style="width:150px; margin-left:10px;">
-                            <option value="">Update Role</option>
-                            <option value="admin">Admin</option>
-                            <option value="staff">Staff</option>
-                            <option value="teacher">Teacher</option>
-                            <option value="student">Student</option>
-                        </select>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
-        });
-    }
-
-    window.changeRole = async (id, role) => {
-        if(!role) return;
-        await updateDoc(doc(db, "users", id), { role });
-        alert("Role updated successfully!");
+    window.addRequirementItem = () => {
+        const val = document.getElementById('new-req-input').value;
+        if(val) { requirements.push(val); renderReqs(); document.getElementById('new-req-input').value = ''; }
     };
 
-    function initTeacher() {
+    window.removeReq = (idx) => { requirements.splice(idx, 1); renderReqs(); };
+
+    function renderReqs() {
+        const cont = document.getElementById('req-list-container');
+        cont.innerHTML = requirements.map((r, i) => `
+            <div class="requirement-item">
+                <input type="checkbox" class="enroll-req-check" value="${r}"> ${r}
+                <button onclick="removeReq(${i})" style="background:none; color:red; padding:0; margin-left:auto;">×</button>
+            </div>
+        `).join('');
+    }
+
+    async function initRegistrar() {
+        renderReqs();
         onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
-            const select = document.getElementById('student-list-select');
-            select.innerHTML = snap.docs.map(d => `<option value="${d.data().email}">${d.data().name}</option>`).join('');
+            const options = snap.docs.map(d => `<option value="${d.id}">${d.data().name}</option>`).join('');
+            document.getElementById('sched-student-select').innerHTML = options;
         });
     }
 
-    function initStudent(user) {
-        document.getElementById('student-welcome-name').innerText = user.displayName;
-        onSnapshot(query(collection(db, "users"), where("email", "==", user.email)), (snap) => {
-            snap.forEach(d => document.getElementById('stat-balance').innerText = "₱" + d.data().balance.toLocaleString());
+    document.getElementById('enroll-btn').onclick = async () => {
+        const checked = Array.from(document.querySelectorAll('.enroll-req-check:checked')).map(c => c.value);
+        const studentData = {
+            name: `${document.getElementById('reg-fname').value} ${document.getElementById('reg-lname').value}`,
+            firstName: document.getElementById('reg-fname').value,
+            lastName: document.getElementById('reg-lname').value,
+            age: document.getElementById('reg-age').value,
+            birthday: document.getElementById('reg-bday').value,
+            contact: document.getElementById('reg-contact').value,
+            address: document.getElementById('reg-address').value,
+            guardian: document.getElementById('reg-guardian').value,
+            email: document.getElementById('reg-email').value,
+            role: 'student',
+            balance: 0,
+            submittedRequirements: checked
+        };
+        await addDoc(collection(db, "users"), studentData);
+        alert("Student Enrolled Successfully!");
+    };
+
+    document.getElementById('save-sched-btn').onclick = async () => {
+        const id = document.getElementById('sched-student-select').value;
+        const url = document.getElementById('sched-img-url').value;
+        await updateDoc(doc(db, "users", id), { scheduleUrl: url });
+        alert("Schedule Linked!");
+    };
+
+    // --- FINANCE LOGIC ---
+    async function initFinance() {
+        onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
+            const options = snap.docs.map(d => `<option value="${d.id}">${d.data().name}</option>`).join('');
+            document.getElementById('pay-student-select').innerHTML = options;
         });
+    }
+
+    document.getElementById('pay-btn').onclick = async () => {
+        const id = document.getElementById('pay-student-select').value;
+        const amt = Number(document.getElementById('pay-amount').value);
+        const type = document.getElementById('pay-type-select').value;
+        const method = document.getElementById('pay-method').value;
+
+        const uDoc = await getDoc(doc(db, "users", id));
+        const newBal = (uDoc.data().balance || 0) + amt; // Adding to "Paid" balance
+        
+        await updateDoc(doc(db, "users", id), { balance: newBal });
+        
+        // Show Receipt
+        document.getElementById('receipt-area').classList.remove('hidden');
+        document.getElementById('receipt-content').innerHTML = `
+            <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
+            <p><strong>Student:</strong> ${uDoc.data().name}</p>
+            <p><strong>Payment For:</strong> ${type}</p>
+            <p><strong>Amount:</strong> ₱${amt.toLocaleString()}</p>
+            <p><strong>Type:</strong> ${method}</p>
+            <hr>
+            <p><em>Thank you for your payment!</em></p>
+        `;
+        alert("Payment Recorded!");
+    };
+
+    // --- STUDENT VIEW LOGIC ---
+    function initStudent(user) {
+        onSnapshot(doc(db, "users", user.uid), (d) => {
+            if(d.exists()){
+                const data = d.data();
+                document.getElementById('stat-balance').innerText = "₱" + (data.balance || 0).toLocaleString();
+                if(data.scheduleUrl) {
+                    document.getElementById('display-schedule').innerHTML = `<img src="${data.scheduleUrl}" style="width:100%; border-radius:8px;">`;
+                }
+            }
+        });
+        // Academic updates
         onSnapshot(query(collection(db, "updates"), where("studentEmail", "==", user.email)), (snap) => {
-            const list = document.getElementById('lesson-list');
-            list.innerHTML = snap.docs.map(d => `
-                <div class="card" style="border-left: 5px solid var(--accent);">
-                    <strong>${d.data().title}</strong><br>
+            document.getElementById('lesson-list').innerHTML = snap.docs.map(d => `
+                <div class="card" style="border-left: 4px solid var(--info)">
+                    <strong>${d.data().title}</strong><br><small>${d.data().date}</small>
                     <p>${d.data().content}</p>
-                    <small>${d.data().date}</small>
                 </div>
             `).join('');
         });
     }
 
-    // Buttons
-    document.getElementById('save-settings').onclick = async () => {
-        const val = document.getElementById('school-name-input').value;
-        await setDoc(doc(db, "settings", "branding"), { schoolName: val }, { merge: true });
-    };
-
-    document.getElementById('enroll-btn').onclick = async () => {
-        const name = document.getElementById('enroll-name').value;
-        const email = document.getElementById('enroll-email').value;
-        await addDoc(collection(db, "users"), { name, email, role: 'student', balance: 0 });
-        alert("Student Enrolled!");
-    };
-
-    document.getElementById('pay-btn').onclick = async () => {
-        const email = document.getElementById('pay-email').value;
-        const amt = Number(document.getElementById('pay-amount').value);
-        const q = query(collection(db, "users"), where("email", "==", email));
-        const snap = await getDocs(q);
-        snap.forEach(async (u) => {
-            await updateDoc(doc(db, "users", u.id), { balance: (u.data().balance || 0) - amt });
+    // --- ADMIN & MISC ---
+    function initAdmin() {
+        onSnapshot(collection(db, "users"), (snap) => {
+            document.getElementById('user-list-admin').innerHTML = snap.docs.map(uDoc => {
+                const u = uDoc.data();
+                return `
+                <div class="user-row card flex-row">
+                    <div style="flex:1"><strong>${u.name}</strong><br><small>${u.email}</small></div>
+                    <div><span class="role-tag" style="background:var(--accent)">${u.role}</span></div>
+                    <select onchange="window.changeRole('${uDoc.id}', this.value)" style="width:120px">
+                        <option value="">Change...</option>
+                        <option value="registrar">Registrar</option>
+                        <option value="finance">Finance</option>
+                        <option value="teacher">Teacher</option>
+                        <option value="student">Student</option>
+                    </select>
+                </div>`;
+            }).join('');
         });
-        alert("Payment Processed!");
-    };
+    }
 
-    document.getElementById('send-update').onclick = async () => {
-        await addDoc(collection(db, "updates"), {
-            studentEmail: document.getElementById('student-list-select').value,
-            title: document.getElementById('lesson-title').value,
-            content: document.getElementById('grade-input').value,
-            date: new Date().toLocaleDateString()
-        });
-        alert("Update Published!");
+    window.changeRole = async (id, role) => {
+        if(role) { await updateDoc(doc(db, "users", id), { role }); alert("Role Updated!"); }
     };
 
     function listenToSchoolName() {
@@ -277,6 +355,11 @@
             if(s.exists()) document.getElementById('display-school-name').innerText = s.data().schoolName;
         });
     }
+
+    document.getElementById('save-settings').onclick = async () => {
+        const val = document.getElementById('school-name-input').value;
+        await setDoc(doc(db, "settings", "branding"), { schoolName: val }, { merge: true });
+    };
 
     document.getElementById('login-btn').onclick = () => signInWithPopup(auth, provider);
     document.getElementById('logout-btn').onclick = () => signOut(auth).then(() => location.reload());
