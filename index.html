@@ -3,27 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ark Portal - SMS</title>
+    <title>Ark Portal - Comprehensive SMS</title>
     <style>
-        :root { --primary: #2c3e50; --secondary: #34495e; --accent: #18bc9c; --bg: #f4f7f6; }
+        :root { --primary: #2c3e50; --secondary: #34495e; --accent: #18bc9c; --bg: #f4f7f6; --danger: #e74c3c; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: #333; }
-        nav { background: var(--primary); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
-        .container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+        nav { background: var(--primary); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .container { max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }
         .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
         .hidden { display: none !important; }
-        button { background: var(--accent); color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button { background: var(--accent); color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
         input, textarea, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        .role-tag { font-size: 0.8rem; background: #e74c3c; padding: 4px 10px; border-radius: 20px; margin-left: 10px; color: white; }
-        .user-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
-        .pending-box { background: #fff3cd; padding: 20px; border-radius: 10px; text-align: center; border: 1px solid #ffeeba; }
+        .role-tag { font-size: 0.8rem; background: var(--danger); padding: 4px 12px; border-radius: 20px; color: white; margin-left: 10px; text-transform: uppercase; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .user-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; background: #fff; }
+        .pending-box { background: #fff3cd; padding: 30px; border-radius: 12px; text-align: center; border: 1px solid #ffeeba; margin-top: 50px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
+        .stat-card { background: #ebf5fb; padding: 20px; border-radius: 8px; text-align: center; }
     </style>
 </head>
 <body>
 
 <nav>
-    <h2 id="display-school-name">School Management</h2>
+    <h2 id="display-school-name">Ark Portal</h2>
     <div id="auth-ui">
-        <button id="login-btn">Login / Sign Up with Google</button>
+        <button id="login-btn">Secure Login</button>
         <div id="user-info" class="hidden">
             <span id="user-name"></span><span id="user-role" class="role-tag"></span>
             <button id="logout-btn" style="background:#95a5a6; margin-left:10px;">Logout</button>
@@ -32,48 +37,78 @@
 </nav>
 
 <div class="container">
-    <div id="pending-view" class="pending-box hidden">
-        <h3>Account Pending Approval</h3>
-        <p>Your account has been created. Please wait for the Administrator to assign your role (Teacher, Staff, or Student).</p>
+    <div id="guest-view" class="pending-box hidden">
+        <h2 style="color: #856404;">Access Restricted</h2>
+        <p>Welcome to Ark Portal. Your account is currently <strong>Pending Approval</strong>.</p>
+        <p>Please contact <em>reymonde.silvestre@gmail.com</em> to assign your role.</p>
     </div>
 
     <section id="admin-view" class="view hidden">
         <div class="card">
-            <h3>Admin: System Management</h3>
-            <label>School Name:</label>
-            <input type="text" id="school-name-input">
-            <button id="save-settings">Save Settings</button>
+            <h3>System Administrator Dashboard</h3>
+            <div class="grid">
+                <div>
+                    <label>School Name:</label>
+                    <input type="text" id="school-name-input" placeholder="e.g. Ark International Academy">
+                    <button id="save-settings">Update Branding</button>
+                </div>
+                <div class="stat-card">
+                    <h4>Quick Actions</h4>
+                    <p>Manage users below to grant access to Staff, Teachers, or Students.</p>
+                </div>
+            </div>
             <hr>
-            <h4>User Management (Assign Roles)</h4>
+            <h4>User Masterlist & Role Assignment</h4>
             <div id="user-list-admin"></div>
         </div>
     </section>
 
     <section id="staff-view" class="view hidden">
         <div class="card">
-            <h3>Staff: Enrollment & Payments</h3>
-            <input type="text" id="pay-email" placeholder="Student Email">
-            <input type="number" id="pay-amount" placeholder="Amount to Deduct">
-            <button id="pay-btn">Post Payment</button>
+            <h3>Registrar & Bursar Portal</h3>
+            <div class="grid">
+                <div>
+                    <h4>Enroll New Student</h4>
+                    <input type="text" id="enroll-name" placeholder="Student Full Name">
+                    <input type="email" id="enroll-email" placeholder="Student Google Email">
+                    <button id="enroll-btn">Confirm Enrollment</button>
+                </div>
+                <div>
+                    <h4>Payment Collection</h4>
+                    <input type="text" id="pay-email" placeholder="Search Student Email">
+                    <input type="number" id="pay-amount" placeholder="Amount (USD/PHP)">
+                    <button id="pay-btn" style="background:#27ae60;">Post Payment</button>
+                </div>
+            </div>
         </div>
     </section>
 
     <section id="teacher-view" class="view hidden">
         <div class="card">
-            <h3>Teacher: Academic Portal</h3>
-            <select id="student-list-select"><option>Select Student...</option></select>
-            <input type="text" id="lesson-title" placeholder="Topic">
-            <textarea id="grade-input" placeholder="Content"></textarea>
-            <button id="send-update">Send to Student</button>
+            <h3>Faculty Academic Portal</h3>
+            <label>Select Student:</label>
+            <select id="student-list-select"><option>Loading Students...</option></select>
+            <input type="text" id="lesson-title" placeholder="Lesson Topic or Subject Code">
+            <textarea id="grade-input" rows="5" placeholder="Enter grades, feedback, or lesson notes..."></textarea>
+            <button id="send-update">Publish to Student Dashboard</button>
         </div>
     </section>
 
     <section id="student-view" class="view hidden">
         <div class="card">
-            <h3>Student Dashboard</h3>
-            <p><strong>Balance:</strong> <span id="stat-balance">--</span></p>
+            <div class="grid">
+                <div>
+                    <h3>Welcome, <span id="student-welcome-name"></span></h3>
+                    <p>Your official academic and financial record.</p>
+                </div>
+                <div class="stat-card" style="background: #18bc9c; color: white;">
+                    <small>CURRENT BALANCE</small>
+                    <h2 id="stat-balance">₱0.00</h2>
+                </div>
+            </div>
             <hr>
-            <ul id="lesson-list"></ul>
+            <h4>Recent Academic Updates</h4>
+            <div id="lesson-list"></div>
         </div>
     </section>
 </div>
@@ -97,7 +132,7 @@
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
-    const ADMIN_EMAIL = "reymondesilvestre@gmail.com";
+    const REYMONDE = "reymonde.silvestre@gmail.com";
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
@@ -108,19 +143,17 @@
             const userRef = doc(db, "users", user.uid);
             let userSnap = await getDoc(userRef);
 
-            // AUTO-ADMIN FOR REYMONDE
-            if (user.email === ADMIN_EMAIL && (!userSnap.exists() || userSnap.data().role !== 'admin')) {
+            // ADMIN BOOTSTRAP
+            if (user.email === REYMONDE) {
                 await setDoc(userRef, { name: user.displayName, email: user.email, role: 'admin' }, { merge: true });
                 userSnap = await getDoc(userRef);
-            } 
-            // NEW USERS START AS GUEST
-            else if (!userSnap.exists()) {
+            } else if (!userSnap.exists()) {
                 await setDoc(userRef, { name: user.displayName, email: user.email, role: 'guest', balance: 0 });
                 userSnap = await getDoc(userRef);
             }
 
             const role = userSnap.data().role;
-            renderView(role, user);
+            switchView(role, user);
         } else {
             document.getElementById('login-btn').classList.remove('hidden');
             document.getElementById('user-info').classList.add('hidden');
@@ -128,70 +161,106 @@
         }
     });
 
-    function renderView(role, user) {
+    function switchView(role, user) {
         document.querySelectorAll('.view, .pending-box').forEach(v => v.classList.add('hidden'));
-        document.getElementById('user-role').innerText = role.toUpperCase();
+        document.getElementById('user-role').innerText = role;
 
         if (role === 'guest') {
-            document.getElementById('pending-view').classList.remove('hidden');
+            document.getElementById('guest-view').classList.remove('hidden');
         } else {
-            const view = document.getElementById(`${role}-view`);
-            if (view) view.classList.remove('hidden');
+            const el = document.getElementById(`${role}-view`);
+            if (el) el.classList.remove('hidden');
             
-            if (role === 'admin') loadAdminTools();
-            if (role === 'teacher') loadTeacherTools();
-            if (role === 'student') loadStudentTools(user.email);
-            listenForSchoolName();
+            if (role === 'admin') initAdmin();
+            if (role === 'teacher') initTeacher();
+            if (role === 'student') initStudent(user);
+            if (role === 'staff') {} 
+            listenToSchoolName();
         }
     }
 
-    // --- ADMIN LOGIC ---
-    function loadAdminTools() {
+    // --- LOGIC MODULES ---
+
+    function initAdmin() {
         onSnapshot(collection(db, "users"), (snap) => {
-            const list = document.getElementById('user-list-admin');
-            list.innerHTML = "";
+            const container = document.getElementById('user-list-admin');
+            container.innerHTML = "";
             snap.forEach(uDoc => {
                 const u = uDoc.data();
                 const div = document.createElement('div');
-                div.className = 'user-row';
+                div.className = 'user-row card';
+                div.style.padding = "10px";
                 div.innerHTML = `
-                    <span>${u.name} (${u.role})</span>
-                    <select onchange="window.updateUserRole('${uDoc.id}', this.value)">
-                        <option value="">Change Role</option>
-                        <option value="admin">Admin</option>
-                        <option value="staff">Staff</option>
-                        <option value="teacher">Teacher</option>
-                        <option value="student">Student</option>
-                    </select>
+                    <div><strong>${u.name}</strong><br><small>${u.email}</small></div>
+                    <div>
+                        Role: <span style="font-weight:bold; color:var(--accent)">${u.role}</span>
+                        <select onchange="window.changeRole('${uDoc.id}', this.value)" style="width:150px; margin-left:10px;">
+                            <option value="">Update Role</option>
+                            <option value="admin">Admin</option>
+                            <option value="staff">Staff</option>
+                            <option value="teacher">Teacher</option>
+                            <option value="student">Student</option>
+                        </select>
+                    </div>
                 `;
-                list.appendChild(div);
+                container.appendChild(div);
             });
         });
     }
 
-    window.updateUserRole = async (uid, newRole) => {
-        if (!newRole) return;
-        await updateDoc(doc(db, "users", uid), { role: newRole });
-        alert("Role Updated!");
+    window.changeRole = async (id, role) => {
+        if(!role) return;
+        await updateDoc(doc(db, "users", id), { role });
+        alert("Role updated successfully!");
     };
 
-    document.getElementById('save-settings').onclick = async () => {
-        const name = document.getElementById('school-name-input').value;
-        await setDoc(doc(db, "settings", "branding"), { schoolName: name }, { merge: true });
-    };
-
-    function listenForSchoolName() {
-        onSnapshot(doc(db, "settings", "branding"), (s) => {
-            if(s.exists()) document.getElementById('display-school-name').innerText = s.data().schoolName;
+    function initTeacher() {
+        onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
+            const select = document.getElementById('student-list-select');
+            select.innerHTML = snap.docs.map(d => `<option value="${d.data().email}">${d.data().name}</option>`).join('');
         });
     }
 
-    // --- TEACHER/STAFF/STUDENT FUNCTIONS (Existing Logic) ---
-    async function loadTeacherTools() {
-        const q = query(collection(db, "users"), where("role", "==", "student"));
-        const snap = await getDocs(q);
-        document.getElementById('student-list-select').innerHTML = snap.docs.map(d => `<option value="${d.data().email}">${d.data().name}</option>`).join('');
+    function initStudent(user) {
+        document.getElementById('student-welcome-name').innerText = user.displayName;
+        onSnapshot(query(collection(db, "users"), where("email", "==", user.email)), (snap) => {
+            snap.forEach(d => document.getElementById('stat-balance').innerText = "₱" + d.data().balance.toLocaleString());
+        });
+        onSnapshot(query(collection(db, "updates"), where("studentEmail", "==", user.email)), (snap) => {
+            const list = document.getElementById('lesson-list');
+            list.innerHTML = snap.docs.map(d => `
+                <div class="card" style="border-left: 5px solid var(--accent);">
+                    <strong>${d.data().title}</strong><br>
+                    <p>${d.data().content}</p>
+                    <small>${d.data().date}</small>
+                </div>
+            `).join('');
+        });
     }
+
+    // Buttons
+    document.getElementById('save-settings').onclick = async () => {
+        const val = document.getElementById('school-name-input').value;
+        await setDoc(doc(db, "settings", "branding"), { schoolName: val }, { merge: true });
+    };
+
+    document.getElementById('enroll-btn').onclick = async () => {
+        const name = document.getElementById('enroll-name').value;
+        const email = document.getElementById('enroll-email').value;
+        await addDoc(collection(db, "users"), { name, email, role: 'student', balance: 0 });
+        alert("Student Enrolled!");
+    };
+
+    document.getElementById('pay-btn').onclick = async () => {
+        const email = document.getElementById('pay-email').value;
+        const amt = Number(document.getElementById('pay-amount').value);
+        const q = query(collection(db, "users"), where("email", "==", email));
+        const snap = await getDocs(q);
+        snap.forEach(async (u) => {
+            await updateDoc(doc(db, "users", u.id), { balance: (u.data().balance || 0) - amt });
+        });
+        alert("Payment Processed!");
+    };
 
     document.getElementById('send-update').onclick = async () => {
         await addDoc(collection(db, "updates"), {
@@ -200,15 +269,12 @@
             content: document.getElementById('grade-input').value,
             date: new Date().toLocaleDateString()
         });
-        alert("Sent!");
+        alert("Update Published!");
     };
 
-    function loadStudentTools(email) {
-        onSnapshot(query(collection(db, "users"), where("email", "==", email)), (snap) => {
-            snap.forEach(d => document.getElementById('stat-balance').innerText = "₱" + d.data().balance);
-        });
-        onSnapshot(query(collection(db, "updates"), where("studentEmail", "==", email)), (snap) => {
-            document.getElementById('lesson-list').innerHTML = snap.docs.map(d => `<li><strong>${d.data().title}</strong>: ${d.data().content}</li>`).join('');
+    function listenToSchoolName() {
+        onSnapshot(doc(db, "settings", "branding"), (s) => {
+            if(s.exists()) document.getElementById('display-school-name').innerText = s.data().schoolName;
         });
     }
 
@@ -217,4 +283,3 @@
 </script>
 </body>
 </html>
-
