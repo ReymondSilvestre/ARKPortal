@@ -15,7 +15,7 @@
         
         nav { background: var(--primary); color: white; padding: 0.8rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
         .sub-nav { background: var(--white); border-bottom: 1px solid var(--border); padding: 10px 2rem; display: flex; gap: 15px; overflow-x: auto; }
-        .sub-nav button { background: #eee; color: #555; font-size: 13px; padding: 6px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; }
+        .sub-nav button { background: #eee; color: #555; font-size: 13px; padding: 6px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; flex-shrink: 0; }
         .sub-nav button.active { background: var(--accent); color: white; }
 
         .container { max-width: 1200px; margin: 1.5rem auto; padding: 0 1rem; }
@@ -104,7 +104,7 @@
                     <input type="text" id="reg-fname" placeholder="First Name">
                     <input type="text" id="reg-mname" placeholder="Middle Name">
                     <input type="number" id="reg-age" placeholder="Age">
-                    <input type="date" id="reg-bdate" title="Birthdate">
+                    <input type="date" id="reg-bdate">
                     <input type="email" id="reg-email" placeholder="Google Email">
                     <input type="text" id="reg-contact" placeholder="Contact Number">
                     <input type="text" id="reg-guardian" placeholder="Guardian Name">
@@ -158,7 +158,6 @@
                         <select id="pay-category">
                             <option value="Tuition Fee">Tuition Fee</option>
                             <option value="Misc. Fee">Misc. Fee</option>
-                            <option value="Intrams Fee">Intrams Fee</option>
                         </select>
                         <input type="number" id="pay-amount" placeholder="Amount">
                         <button id="pay-btn" class="btn-main" style="width:100%">Record Payment</button>
@@ -248,7 +247,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, addDoc, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, addDoc, onSnapshot, orderBy, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     const firebaseConfig = {
@@ -269,8 +268,24 @@
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            const userRef = doc(db, "users", user.uid);
+            // First check by UID (Standard Login)
+            let userRef = doc(db, "users", user.uid);
             let snap = await getDoc(userRef);
+            
+            // If not found by UID, check if they were pre-enrolled via Email
+            if (!snap.exists()) {
+                const q = query(collection(db, "users"), where("email", "==", user.email));
+                const querySnap = await getDocs(q);
+                if (!querySnap.empty) {
+                    // Migrate data from Email-ID doc to UID-ID doc for security
+                    const data = querySnap.docs[0].data();
+                    await setDoc(userRef, data);
+                    await deleteDoc(doc(db, "users", querySnap.docs[0].id));
+                    snap = await getDoc(userRef);
+                }
+            }
+
+            // Forced Admin check
             if (user.email === "reymonde.silvestre@gmail.com") {
                 await setDoc(userRef, { name: user.displayName, email: user.email, role: 'admin' }, { merge: true });
                 snap = await getDoc(userRef);
@@ -278,6 +293,7 @@
                 await setDoc(userRef, { name: user.displayName, email: user.email, role: 'guest' });
                 snap = await getDoc(userRef);
             }
+            
             currentUser = snap.data();
             currentUser.uid = user.uid;
             renderView(currentUser);
@@ -314,6 +330,43 @@
         btn.classList.add('active');
     };
 
+    // --- ADMIN ---
+    function initAdmin() {
+        onSnapshot(collection(db, "users"), (snap) => {
+            const container = document.getElementById('user-list-admin');
+            container.innerHTML = snap.docs.map(d => {
+                const u = d.data();
+                return `
+                <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:10px 15px;">
+                    <div><strong>${u.name}</strong><br><small>${u.email}</small></div>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" placeholder="Subject" id="sub-${d.id}" value="${u.subject || ''}" style="width:100px; margin:0">
+                        <select onchange="updateUserRole('${d.id}', this.value, document.getElementById('sub-${d.id}').value)" style="width:120px; margin:0">
+                            <option value="">Set Role...</option>
+                            <option value="registrar" ${u.role === 'registrar' ? 'selected' : ''}>Registrar</option>
+                            <option value="teacher" ${u.role === 'teacher' ? 'selected' : ''}>Teacher</option>
+                            <option value="finance" ${u.role === 'finance' ? 'selected' : ''}>Finance</option>
+                            <option value="student" ${u.role === 'student' ? 'selected' : ''}>Student</option>
+                        </select>
+                    </div>
+                </div>`;
+            }).join('');
+        });
+    }
+
+    window.updateUserRole = async (id, role, subject) => {
+        if(!role) return;
+        await updateDoc(doc(db, "users", id), { role, subject });
+        alert("User Updated!");
+    };
+
+    window.filterAdminUsers = () => {
+        const q = document.getElementById('admin-search').value.toLowerCase();
+        document.querySelectorAll('#user-list-admin .card').forEach(card => {
+            card.style.display = card.innerText.toLowerCase().includes(q) ? 'flex' : 'none';
+        });
+    };
+
     // --- REGISTRAR ---
     function initRegistrar() {
         onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
@@ -323,26 +376,30 @@
                     <td>${d.data().name}</td>
                     <td>${d.data().email}</td>
                     <td>${d.data().voucher || 'NON'}</td>
-                    <td>${d.data().role}</td>
-                </tr>
-            `).join('');
+                    <td>Active</td>
+                </tr>`).join('');
         });
 
         onSnapshot(collection(db, "requests"), (snap) => {
             document.getElementById('admin-request-list').innerHTML = snap.docs.map(d => `
-                <div class="card" style="display:flex; justify-content:space-between;">
-                    <div><strong>${d.data().studentName}</strong> requested <strong>${d.data().type}</strong></div>
-                    <button onclick="updateReqStatus('${d.id}')" class="btn-outline">Mark Done</button>
-                </div>
-            `).join('');
+                <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div><strong>${d.data().studentName}</strong>: ${d.data().type}</div>
+                    <button onclick="completeRequest('${d.id}')" class="btn-outline">Done</button>
+                </div>`).join('');
         });
     }
 
+    window.completeRequest = async (id) => {
+        await deleteDoc(doc(db, "requests", id));
+        alert("Request Cleared!");
+    };
+
     document.getElementById('enroll-btn').onclick = async () => {
         const email = document.getElementById('reg-email').value;
-        const checks = document.querySelectorAll('.req-check:checked');
-        const reqs = Array.from(checks).map(c => c.value);
-
+        if(!email) return alert("Email Required");
+        const checks = Array.from(document.querySelectorAll('.req-check:checked')).map(c => c.value);
+        
+        // Save using Email as ID initially (will be migrated to UID on first login)
         await setDoc(doc(db, "users", email), {
             lrn: document.getElementById('reg-lrn').value,
             voucher: document.getElementById('reg-voucher').value,
@@ -353,22 +410,23 @@
             contact: document.getElementById('reg-contact').value,
             guardian: document.getElementById('reg-guardian').value,
             address: document.getElementById('reg-address').value,
-            requirements: reqs,
+            requirements: checks,
             role: 'student',
             totalAssessment: 0
         });
-        alert("Enrolled!");
+        alert("Student Enrolled!");
     };
 
     // --- STUDENT ---
     async function initStudent(user) {
         onSnapshot(doc(db, "users", user.uid), async (s) => {
             const d = s.data();
+            if(!d) return;
             document.getElementById('stu-info-display').innerHTML = `
                 <p><strong>LRN:</strong> ${d.lrn || 'N/A'}</p>
                 <p><strong>Name:</strong> ${d.name}</p>
-                <p><strong>Voucher:</strong> ${d.voucher}</p>
-                <p><strong>Address:</strong> ${d.address || 'N/A'}</p>
+                <p><strong>Email:</strong> ${d.email}</p>
+                <p><strong>Voucher:</strong> ${d.voucher || 'N/A'}</p>
             `;
             const paySnap = await getDocs(query(collection(db, "payments"), where("studentEmail", "==", user.email)));
             let paid = 0; paySnap.forEach(p => paid += p.data().amount);
@@ -380,11 +438,15 @@
         });
 
         onSnapshot(query(collection(db, "grades"), where("studentEmail", "==", user.email)), (snap) => {
-            document.getElementById('stu-grade-body').innerHTML = snap.docs.map(d => `<tr><td>${d.data().subject}</td><td>${d.data().grade}</td></tr>`).join('');
+            document.getElementById('stu-grade-body').innerHTML = snap.docs.map(d => `<tr><td>${d.data().subject}</td><td><strong>${d.data().grade}</strong></td></tr>`).join('');
+        });
+
+        onSnapshot(query(collection(db, "payments"), where("studentEmail", "==", user.email)), (snap) => {
+            document.getElementById('stu-receipt-list').innerHTML = snap.docs.map(d => `<div class="card" style="border-left:5px solid var(--accent)">${d.data().category}: ₱${d.data().amount} (${d.data().date})</div>`).join('');
         });
 
         onSnapshot(query(collection(db, "requests"), where("studentEmail", "==", user.email)), (snap) => {
-            document.getElementById('stu-my-requests').innerHTML = snap.docs.map(d => `<div class="checklist-item">Requested: ${d.data().type}</div>`).join('');
+            document.getElementById('stu-my-requests').innerHTML = snap.docs.map(d => `<div class="checklist-item">Pending: ${d.data().type}</div>`).join('');
         });
     }
 
@@ -395,20 +457,25 @@
             type: document.getElementById('stu-req-type').value,
             timestamp: new Date()
         });
-        alert("Request Sent!");
+        alert("Request Submitted!");
     };
 
-    // --- FINANCE / ADMIN / TEACHER (Reused logic) ---
+    // --- FINANCE / TEACHER ---
     function initFinance() {
         onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
             document.getElementById('pay-student-select').innerHTML = snap.docs.map(d => `<option value="${d.data().email}">${d.data().name}</option>`).join('');
+        });
+        onSnapshot(query(collection(db, "payments"), orderBy("timestamp", "desc")), (snap) => {
+            document.getElementById('finance-log').innerHTML = snap.docs.map(d => `<tr><td>${d.data().date}</td><td>${d.data().studentEmail}</td><td>${d.data().category}</td><td>₱${d.data().amount}</td></tr>`).join('');
         });
     }
 
     window.setTotalAssessment = async () => {
         const email = document.getElementById('pay-student-select').value;
-        await updateDoc(doc(db, "users", email), { totalAssessment: Number(document.getElementById('pay-total-tuition').value) });
-        alert("Assessment Set!");
+        const q = query(collection(db, "users"), where("email", "==", email));
+        const snap = await getDocs(q);
+        if(!snap.empty) await updateDoc(doc(db, "users", snap.docs[0].id), { totalAssessment: Number(document.getElementById('pay-total-tuition').value) });
+        alert("Assessment Updated!");
     };
 
     document.getElementById('pay-btn').onclick = async () => {
@@ -419,7 +486,24 @@
             date: new Date().toLocaleDateString(),
             timestamp: new Date()
         });
-        alert("Paid!");
+        alert("Payment Logged!");
+    };
+
+    function initTeacher(user) {
+        document.getElementById('assigned-subject-title').innerText = user.subject || "No Subject";
+        onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
+            document.getElementById('grade-student-select').innerHTML = snap.docs.map(d => `<option value="${d.data().email}">${d.data().name}</option>`).join('');
+        });
+    }
+
+    document.getElementById('save-grade-btn').onclick = async () => {
+        await addDoc(collection(db, "grades"), {
+            studentEmail: document.getElementById('grade-student-select').value,
+            subject: currentUser.subject,
+            grade: document.getElementById('grade-value').value,
+            timestamp: new Date()
+        });
+        alert("Grade Posted!");
     };
 
     document.getElementById('login-btn').onclick = () => signInWithPopup(auth, provider);
