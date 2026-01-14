@@ -388,7 +388,7 @@
                             <option value="finance" ${u.role === 'finance' ? 'selected' : ''}>Finance</option>
                             <option value="student" ${u.role === 'student' ? 'selected' : ''}>Student</option>
                         </select>
-                        <button onclick="modifyUserName('${docId}', '${u.name?.replace(/'/g,"\\'") || ''}')" class="btn-info" style="padding:5px 10px;">Edit</button>
+                        <button onclick="modifyUserName('${docId}', '${(u.name || '').replace(/'/g,"\\'")}')" class="btn-info" style="padding:5px 10px;">Edit</button>
                         <button onclick="deleteUserAccount('${docId}')" class="btn-danger" style="padding:5px 10px;">Delete</button>
                         ${u.role === 'teacher' ? `<button onclick="assignSubject('${docId}')" class="btn-main" style="padding:5px 10px;">Save Subj</button>` : ''}
                     </div>
@@ -538,7 +538,7 @@
                 <td><strong>${s.name || '—'}</strong><br><small>${s.email}</small></td>
                 <td>₱${Number(s.totalAssessment || 0).toLocaleString()}</td>
                 <td>${breakdownDisplay}</td>
-                <td><button onclick="openFeeModal('${s.id}', '${(s.name || '').replace(/'/g,"\\'")}', '${JSON.stringify(fb).replace(/'/g,"\\'")}')" class="btn-main">Edit Breakdown</button></td>
+                <td><button onclick="openFeeModal('${s.id}')" class="btn-main">Edit Breakdown</button></td>
             </tr>`;
         }).join('');
     }
@@ -570,17 +570,14 @@
         });
     }
 
-    window.openFeeModal = (id, name, fbJsonEscaped) => {
+    window.openFeeModal = (id) => {
+        const student = financeStudentsCache.find(s => s.id === id);
+        if (!student) return;
+
         currentStudentId = id;
-        document.getElementById('modal-student-name').innerText = name;
+        document.getElementById('modal-student-name').innerText = student.name || student.email;
 
-        let fb = {};
-        try {
-            fb = JSON.parse(fbJsonEscaped);
-        } catch (e) {
-            console.error("Invalid fee JSON", e);
-        }
-
+        const fb = student.feeBreakdown || {};
         document.getElementById('fee-list').innerHTML = Object.entries(fb).map(([key, val]) => `
             <div class="breakdown-item">
                 <span class="fee-tag">${key.charAt(0).toUpperCase() + key.slice(1)}</span>
@@ -598,23 +595,35 @@
     };
 
     window.addFeeItem = () => {
-        const name = document.getElementById('new-fee-name').value.trim().toLowerCase();
-        const amount = document.getElementById('new-fee-amount').value.trim();
+        const nameInput = document.getElementById('new-fee-name');
+        const amountInput = document.getElementById('new-fee-amount');
+        const name = nameInput.value.trim().toLowerCase();
+        const amount = amountInput.value.trim();
+        
         if (!name || !amount || isNaN(amount)) return alert('Enter valid fee name and amount');
 
-        document.getElementById('fee-list').innerHTML += `
-            <div class="breakdown-item">
-                <span class="fee-tag">${name.charAt(0).toUpperCase() + name.slice(1)}</span>
-                <input type="number" value="${Number(amount)}" data-name="${name}">
-                <button onclick="removeFeeItem(this)" class="btn-danger" style="padding:2px 6px;">X</button>
-            </div>
+        const feeList = document.getElementById('fee-list');
+        // Clear "No fees yet" text if it exists
+        if (feeList.querySelector('p')) feeList.innerHTML = '';
+
+        const div = document.createElement('div');
+        div.className = 'breakdown-item';
+        div.innerHTML = `
+            <span class="fee-tag">${name.charAt(0).toUpperCase() + name.slice(1)}</span>
+            <input type="number" value="${Number(amount)}" data-name="${name}">
+            <button onclick="removeFeeItem(this)" class="btn-danger" style="padding:2px 6px;">X</button>
         `;
-        document.getElementById('new-fee-name').value = '';
-        document.getElementById('new-fee-amount').value = '';
+        feeList.appendChild(div);
+        
+        nameInput.value = '';
+        amountInput.value = '';
     };
 
     window.removeFeeItem = (btn) => {
         btn.parentElement.remove();
+        if (document.getElementById('fee-list').children.length === 0) {
+            document.getElementById('fee-list').innerHTML = '<p style="color:#999">No fees yet. Add below.</p>';
+        }
     };
 
     window.saveFeeBreakdown = async () => {
@@ -625,14 +634,14 @@
         saveBtn.textContent = "Saving...";
 
         try {
-            const items = document.querySelectorAll('#fee-list .breakdown-item');
+            const inputs = document.querySelectorAll('#fee-list .breakdown-item input');
             const fb = {};
             let total = 0;
 
-            items.forEach(item => {
-                const name = item.querySelector('input').dataset.name;
-                const amount = Number(item.querySelector('input').value) || 0;
-                if (name && amount >= 0) {
+            inputs.forEach(input => {
+                const name = input.dataset.name;
+                const amount = Number(input.value) || 0;
+                if (name) {
                     fb[name] = amount;
                     total += amount;
                 }
@@ -648,7 +657,7 @@
             refreshFinanceAssessment();
         } catch (err) {
             console.error("Save fee error:", err);
-            alert("Failed to save: " + (err.message || "Check console for details"));
+            alert("Failed to save: " + (err.message || "Check console"));
         } finally {
             saveBtn.disabled = false;
             saveBtn.textContent = "Save";
@@ -772,6 +781,7 @@
     document.getElementById('login-btn').onclick = () => signInWithPopup(auth, provider);
     document.getElementById('logout-btn').onclick = () => signOut(auth).then(() => location.reload());
 
+    // Export to window for HTML onclicks
     window.deleteUserAccount = deleteUserAccount;
     window.modifyUserName = modifyUserName;
     window.updateUserRole = updateUserRole;
@@ -786,3 +796,4 @@
 </script>
 </body>
 </html>
+
