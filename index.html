@@ -15,7 +15,6 @@
         
         nav { background: var(--primary); color: white; padding: 0.8rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
         
-        /* New Role-Specific Nav Styles */
         .role-nav-container { display: flex; align-items: center; gap: 20px; }
         .sub-nav { background: var(--white); border-bottom: 1px solid var(--border); padding: 10px 2rem; display: flex; gap: 15px; overflow-x: auto; }
         .sub-nav button { background: #eee; color: #555; font-size: 13px; padding: 6px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; flex-shrink: 0; }
@@ -80,6 +79,7 @@
 
     <div id="finance-menu" class="sub-nav hidden">
         <button onclick="showSubPage('finance', 'collections-page', this)" class="active">Collect Payment</button>
+        <button onclick="showSubPage('finance', 'assessment-page', this)">Assign Assessment</button>
         <button onclick="showSubPage('finance', 'history-page', this)">Payment History</button>
     </div>
 
@@ -102,7 +102,7 @@
         <div id="admin-users-page" class="sub-view">
             <div class="card">
                 <h3>System User Control</h3>
-                <input type="text" id="admin-search" placeholder="Search users by name or email..." onkeyup="filterAdminUsers()">
+                <input type="text" id="admin-search" placeholder="Search users by name, email, or role..." onkeyup="filterAdminUsers()">
                 <div id="user-list-admin" style="margin-top:15px;"></div>
             </div>
         </div>
@@ -115,7 +115,6 @@
         <div id="enrollment-page" class="sub-view">
             <div class="card">
                 <h3>New Student Enrollment</h3>
-                <p><small>Note: Creating an account here allows the student to login immediately with their Google Email.</small></p>
                 <div class="grid">
                     <input type="text" id="reg-lrn" placeholder="LRN">
                     <select id="reg-voucher">
@@ -134,20 +133,13 @@
 
         <div id="masterlist-page" class="sub-view hidden">
             <div class="card">
-                <h3>Student Masterlist (Modify/Delete)</h3>
+                <h3>Student Masterlist</h3>
                 <div style="overflow-x:auto;">
                     <table>
                         <thead><tr><th>LRN</th><th>Name</th><th>Email</th><th>Actions</th></tr></thead>
                         <tbody id="masterlist-body"></tbody>
                     </table>
                 </div>
-            </div>
-            <div class="card">
-                <h3>Released Documents Log</h3>
-                <table>
-                    <thead><tr><th>Student</th><th>Document Type</th><th>Date Released</th></tr></thead>
-                    <tbody id="released-docs-body"></tbody>
-                </table>
             </div>
         </div>
 
@@ -156,7 +148,7 @@
                 <h3>Pending Requests</h3>
                 <div id="admin-request-list"></div>
             </div>
-        </div>
+        </div >
 
         <div id="schedule-page" class="sub-view hidden">
             <div class="card">
@@ -194,18 +186,32 @@
                         </select>
                         <button id="pay-btn" class="btn-main" style="width:100%">Record Payment</button>
                     </div>
-                    <div class="card" style="background:var(--primary); color:white;">
-                        <h4>Set Assessment</h4>
-                        <input type="number" id="pay-total-tuition" placeholder="Total School Fee">
-                        <button onclick="setTotalAssessment()" class="btn-outline" style="color:white; border-color:white; width:100%">Update Total</button>
-                    </div>
                 </div>
             </div>
         </div>
+
+        <div id="assessment-page" class="sub-view hidden">
+            <div class="card">
+                <h3>Assign Student Assessment (School Fees)</h3>
+                <p><small>Set the total required payment for each student individually.</small></p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Current Assessment</th>
+                            <th>New Amount</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="finance-assessment-list"></tbody>
+                </table>
+            </div>
+        </div>
+
         <div id="history-page" class="sub-view hidden">
             <div class="card">
                 <table id="finance-log-table">
-                    <thead><tr><th>Date</th><th>Student</th><th>Amount</th></tr></thead>
+                    <thead><tr><th>Date</th><th>Student</th><th>Amount</th><th>Category</th></tr></thead>
                     <tbody id="finance-log"></tbody>
                 </table>
             </div>
@@ -217,7 +223,7 @@
             <div class="grid">
                 <div class="card"><h3>Profile</h3><div id="stu-info-display"></div></div>
                 <div class="card" style="background:var(--primary); color:white; text-align:center;">
-                    <small>Balance</small><h1 id="stu-balance">₱0.00</h1>
+                    <small>Outstanding Balance</small><h1 id="stu-balance">₱0.00</h1>
                 </div>
             </div>
         </div>
@@ -231,7 +237,7 @@
             <div class="card"><h3>Class Schedule</h3><img id="stu-schedule-img" src="" alt="No schedule posted"></div>
         </div>
         <div id="stu-payments-page" class="sub-view hidden">
-            <div class="card"><h3>Payments</h3><div id="stu-receipt-list"></div></div>
+            <div class="card"><h3>Payment History</h3><div id="stu-receipt-list"></div></div>
         </div>
         <div id="stu-requests-page" class="sub-view hidden">
             <div class="card">
@@ -273,22 +279,17 @@
             let userRef = doc(db, "users", user.uid);
             let snap = await getDoc(userRef);
             
-            // AUTOMATIC ACCOUNT CLAIMING:
-            // If the Registrar pre-created an account using the Email as the ID
             if (!snap.exists()) {
                 const preCreatedRef = doc(db, "users", user.email);
                 const preSnap = await getDoc(preCreatedRef);
-                
                 if (preSnap.exists()) {
                     const data = preSnap.data();
-                    // Transfer data to the actual UID-based document
                     await setDoc(userRef, { ...data, uid: user.uid });
                     await deleteDoc(preCreatedRef);
                     snap = await getDoc(userRef);
                 }
             }
 
-            // ADMIN OVERRIDE
             if (user.email === "reymonde.silvestre@gmail.com") {
                 await setDoc(userRef, { name: user.displayName, email: user.email, role: 'admin' }, { merge: true });
                 snap = await getDoc(userRef);
@@ -312,15 +313,9 @@
         document.getElementById('user-info').classList.remove('hidden');
         document.getElementById('user-name').innerText = user.name;
         document.getElementById('user-role').innerText = user.role;
-        
-        // Hide all views and nav menus
         document.querySelectorAll('.view, .sub-nav').forEach(v => v.classList.add('hidden'));
-        
-        // Show only the relevant role view
         const mainView = document.getElementById(`${user.role}-view`) || document.getElementById('guest-view');
-        mainView.classList.remove('hidden');
-        
-        // Show only the relevant role navigation menu
+        if(mainView) mainView.classList.remove('hidden');
         const subNav = document.getElementById(`${user.role}-menu`);
         if(subNav) subNav.classList.remove('hidden');
 
@@ -338,7 +333,7 @@
         btn.classList.add('active');
     };
 
-    // --- ADMIN ---
+    // --- ENHANCED ADMIN ---
     function initAdmin() {
         onSnapshot(collection(db, "users"), (snap) => {
             const container = document.getElementById('user-list-admin');
@@ -347,22 +342,43 @@
                 const docId = d.id;
                 return `
                 <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:10px 15px;">
-                    <div><strong>${u.name}</strong><br><small>${u.email}</small></div>
-                    <div style="display:flex; gap:10px;">
-                        ${u.role === 'teacher' ? `<input type="text" placeholder="Subject" id="sub-${docId}" value="${u.subject || ''}" style="width:120px; margin:0">` : ''}
-                        <select onchange="updateUserRole('${docId}', this.value)" style="width:120px; margin:0">
-                            <option value="">Set Role...</option>
+                    <div>
+                        <strong>${u.name}</strong> <span class="role-tag" style="background:#7f8c8d">${u.role}</span><br>
+                        <small>${u.email}</small>
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        ${u.role === 'teacher' ? `<input type="text" placeholder="Subject" id="sub-${docId}" value="${u.subject || ''}" style="width:100px; margin:0; padding:5px;">` : ''}
+                        <select onchange="updateUserRole('${docId}', this.value)" style="width:110px; margin:0; padding:5px;">
+                            <option value="">Change Role...</option>
+                            <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
                             <option value="registrar" ${u.role === 'registrar' ? 'selected' : ''}>Registrar</option>
                             <option value="teacher" ${u.role === 'teacher' ? 'selected' : ''}>Teacher</option>
                             <option value="finance" ${u.role === 'finance' ? 'selected' : ''}>Finance</option>
                             <option value="student" ${u.role === 'student' ? 'selected' : ''}>Student</option>
                         </select>
+                        <button onclick="modifyUserName('${docId}', '${u.name}')" class="btn-info" style="padding:5px 10px;">Edit</button>
+                        <button onclick="deleteUserAccount('${docId}')" class="btn-danger" style="padding:5px 10px;">Delete</button>
                         ${u.role === 'teacher' ? `<button onclick="assignSubject('${docId}')" class="btn-main" style="padding:5px 10px;">Save Subj</button>` : ''}
                     </div>
                 </div>`;
             }).join('');
         });
     }
+
+    window.modifyUserName = async (id, currentName) => {
+        const newName = prompt("Update User Display Name:", currentName);
+        if(newName) {
+            await updateDoc(doc(db, "users", id), { name: newName });
+            alert("Name updated.");
+        }
+    };
+
+    window.deleteUserAccount = async (id) => {
+        if(confirm("DANGER: Are you sure? This will permanently delete the portal access for this user.")) {
+            await deleteDoc(doc(db, "users", id));
+            alert("User deleted.");
+        }
+    };
 
     window.updateUserRole = async (id, role) => {
         if(!role) return;
@@ -383,93 +399,47 @@
         });
     };
 
-    // --- ENHANCED REGISTRAR ---
+    // --- REGISTRAR ---
     function initRegistrar() {
-        // Masterlist with Modify/Delete
         onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
             document.getElementById('masterlist-body').innerHTML = snap.docs.map(d => {
                 const s = d.data();
-                const id = d.id;
-                return `
-                <tr>
-                    <td>${s.lrn || '-'}</td>
-                    <td>${s.name}</td>
-                    <td>${s.email}</td>
-                    <td>
-                        <div class="action-btns">
-                            <button onclick="modifyStudent('${id}', '${s.name}', '${s.lrn}')" class="btn-info">Edit</button>
-                            <button onclick="deleteStudent('${id}')" class="btn-danger">Delete</button>
-                        </div>
-                    </td>
-                </tr>`;
+                return `<tr><td>${s.lrn || '-'}</td><td>${s.name}</td><td>${s.email}</td>
+                <td><button onclick="deleteUserAccount('${d.id}')" class="btn-danger">Remove</button></td></tr>`;
             }).join('');
         });
 
-        // Request management
         onSnapshot(collection(db, "requests"), (snap) => {
             document.getElementById('admin-request-list').innerHTML = snap.docs.map(d => `
                 <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
                     <div><strong>${d.data().studentName}</strong>: ${d.data().type}</div>
-                    <button onclick="releaseDocument('${d.id}')" class="btn-main">Mark as Released</button>
+                    <button onclick="releaseDocument('${d.id}')" class="btn-main">Mark Released</button>
                 </div>`).join('');
         });
-
-        onSnapshot(query(collection(db, "released_docs"), orderBy("timestamp", "desc")), (snap) => {
-            document.getElementById('released-docs-body').innerHTML = snap.docs.map(d => `
-                <tr><td>${d.data().studentName}</td><td>${d.data().type}</td><td>${d.data().date}</td></tr>`).join('');
-        });
     }
-
-    window.modifyStudent = async (id, currentName, currentLrn) => {
-        const newName = prompt("Modify Name:", currentName);
-        const newLrn = prompt("Modify LRN:", currentLrn);
-        if(newName !== null && newLrn !== null) {
-            await updateDoc(doc(db, "users", id), { name: newName, lrn: newLrn });
-            alert("Student Record Updated");
-        }
-    };
-
-    window.deleteStudent = async (id) => {
-        if(confirm("Are you sure you want to delete this student account? Access will be revoked.")) {
-            await deleteDoc(doc(db, "users", id));
-            alert("Account Deleted");
-        }
-    };
 
     window.releaseDocument = async (id) => {
         const snap = await getDoc(doc(db, "requests", id));
         if(snap.exists()){
             const data = snap.data();
-            await addDoc(collection(db, "released_docs"), {
-                ...data,
-                date: new Date().toLocaleDateString(),
-                timestamp: new Date()
-            });
+            await addDoc(collection(db, "released_docs"), { ...data, date: new Date().toLocaleDateString(), timestamp: new Date() });
             await deleteDoc(doc(db, "requests", id));
-            alert("Document released and logged!");
+            alert("Document released!");
         }
     };
 
-    // Registrar: Pre-register Student Account
     document.getElementById('enroll-btn').onclick = async () => {
         const email = document.getElementById('reg-email').value;
-        const lrn = document.getElementById('reg-lrn').value;
-        const lname = document.getElementById('reg-lname').value;
-        const fname = document.getElementById('reg-fname').value;
-
-        if(!email || !lname || !fname) return alert("Please fill in email and name!");
-
-        // Set account using EMAIL as ID so the Login system can find it later
+        if(!email) return alert("Email required!");
         await setDoc(doc(db, "users", email), {
-            lrn: lrn,
-            name: `${lname}, ${fname}`,
+            lrn: document.getElementById('reg-lrn').value,
+            name: `${document.getElementById('reg-lname').value}, ${document.getElementById('reg-fname').value}`,
             email: email,
             role: 'student',
             totalAssessment: 0,
             voucher: document.getElementById('reg-voucher').value
         });
-        alert("Student Enrolled & Account Created!");
-        // Clear fields
+        alert("Enrolled!");
         document.querySelectorAll('#enrollment-page input').forEach(i => i.value = "");
     };
 
@@ -482,7 +452,7 @@
     }
 
     document.getElementById('save-grade-btn').onclick = async () => {
-        if(!currentUser.subject) return alert("You have no assigned subject!");
+        if(!currentUser.subject) return alert("No assigned subject!");
         await addDoc(collection(db, "grades"), {
             studentEmail: document.getElementById('grade-student-select').value,
             subject: currentUser.subject,
@@ -492,33 +462,50 @@
         alert("Grade Saved!");
     };
 
-    // --- FINANCE ---
+    // --- ENHANCED FINANCE ---
     function initFinance() {
+        // Populating Select for Payments
         onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
-            document.getElementById('pay-student-select').innerHTML = snap.docs.map(d => `<option value="${d.data().email}">${d.data().name}</option>`).join('');
+            const students = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            
+            // Update Payment dropdown
+            document.getElementById('pay-student-select').innerHTML = students.map(s => `<option value="${s.email}">${s.name}</option>`).join('');
+            
+            // Update Assessment Table
+            document.getElementById('finance-assessment-list').innerHTML = students.map(s => `
+                <tr>
+                    <td>${s.name}</td>
+                    <td>₱${(s.totalAssessment || 0).toLocaleString()}</td>
+                    <td><input type="number" id="new-assess-${s.id}" placeholder="New Amount" style="width:120px; margin:0;"></td>
+                    <td><button onclick="updateIndividualAssessment('${s.id}')" class="btn-main">Set</button></td>
+                </tr>
+            `).join('');
         });
+
         onSnapshot(query(collection(db, "payments"), orderBy("timestamp", "desc")), (snap) => {
-            document.getElementById('finance-log').innerHTML = snap.docs.map(d => `<tr><td>${d.data().date}</td><td>${d.data().studentEmail}</td><td>₱${d.data().amount}</td></tr>`).join('');
+            document.getElementById('finance-log').innerHTML = snap.docs.map(d => `<tr><td>${d.data().date}</td><td>${d.data().studentEmail}</td><td>₱${d.data().amount}</td><td>${d.data().category}</td></tr>`).join('');
         });
     }
 
-    window.setTotalAssessment = async () => {
-        const email = document.getElementById('pay-student-select').value;
-        const q = query(collection(db, "users"), where("email", "==", email));
-        const snap = await getDocs(q);
-        if(!snap.empty) await updateDoc(doc(db, "users", snap.docs[0].id), { totalAssessment: Number(document.getElementById('pay-total-tuition').value) });
-        alert("Assessment Updated!");
+    window.updateIndividualAssessment = async (userId) => {
+        const val = document.getElementById(`new-assess-${userId}`).value;
+        if(!val) return alert("Enter an amount");
+        await updateDoc(doc(db, "users", userId), { totalAssessment: Number(val) });
+        alert("Assessment updated for student.");
     };
 
     document.getElementById('pay-btn').onclick = async () => {
+        const amt = document.getElementById('pay-amount').value;
+        if(!amt) return alert("Enter amount");
         await addDoc(collection(db, "payments"), {
             studentEmail: document.getElementById('pay-student-select').value,
-            amount: Number(document.getElementById('pay-amount').value),
+            amount: Number(amt),
             category: document.getElementById('pay-category').value,
             date: new Date().toLocaleDateString(),
             timestamp: new Date()
         });
         alert("Payment Recorded!");
+        document.getElementById('pay-amount').value = "";
     };
 
     // --- STUDENT ---
@@ -527,13 +514,27 @@
             if(!s.exists()) return;
             const d = s.data();
             document.getElementById('stu-info-display').innerHTML = `<p><strong>${d.name}</strong><br>${d.email}<br>LRN: ${d.lrn || 'N/A'}</p>`;
+            
+            // Calculate Balance
             const pSnap = await getDocs(query(collection(db, "payments"), where("studentEmail", "==", user.email)));
-            let paid = 0; pSnap.forEach(p => paid += p.data().amount);
-            document.getElementById('stu-balance').innerText = `₱${((d.totalAssessment || 0) - paid).toLocaleString()}`;
+            let paid = 0; 
+            let receipts = "";
+            pSnap.forEach(p => {
+                paid += p.data().amount;
+                receipts += `<div class="card" style="padding:10px; margin-bottom:5px; font-size:13px;">
+                                <strong>${p.data().date}</strong> - ${p.data().category}: ₱${p.data().amount.toLocaleString()}
+                             </div>`;
+            });
+            
+            const total = d.totalAssessment || 0;
+            document.getElementById('stu-balance').innerText = `₱${(total - paid).toLocaleString()}`;
+            document.getElementById('stu-receipt-list').innerHTML = receipts || "No payment records found.";
         });
+
         onSnapshot(query(collection(db, "grades"), where("studentEmail", "==", user.email)), (snap) => {
             document.getElementById('stu-grade-body').innerHTML = snap.docs.map(d => `<tr><td>${d.data().subject}</td><td>${d.data().grade}</td></tr>`).join('');
         });
+        
         onSnapshot(doc(db, "settings", "schedule"), (s) => {
             if(s.exists()) document.getElementById('stu-schedule-img').src = s.data().imgUrl;
         });
@@ -551,6 +552,9 @@
 
     document.getElementById('login-btn').onclick = () => signInWithPopup(auth, provider);
     document.getElementById('logout-btn').onclick = () => signOut(auth).then(() => location.reload());
+    
+    // Global Access
+    window.deleteUserAccount = deleteUserAccount;
 </script>
 </body>
 </html>
