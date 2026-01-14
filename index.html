@@ -3,37 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ark Portal - SMS Pro</title>
+    <title>Ark Portal - SMS Pro Elite</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --primary: #2c3e50; --secondary: #34495e; --accent: #18bc9c; --bg: #f4f7f6; --danger: #e74c3c; --info: #3498db; --warning: #f39c12; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: #333; }
-        nav { background: var(--primary); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+        :root { 
+            --primary: #2c3e50; --secondary: #34495e; --accent: #18bc9c; 
+            --bg: #f4f7f6; --danger: #e74c3c; --info: #3498db; --warning: #f39c12; 
+            --white: #ffffff; --border: #dfe6e9;
+        }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: var(--bg); color: #333; }
+        
+        /* Navigation */
+        nav { background: var(--primary); color: white; padding: 0.8rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
+        .sub-nav { background: var(--white); border-bottom: 1px solid var(--border); padding: 10px 2rem; display: flex; gap: 15px; overflow-x: auto; }
+        .sub-nav button { background: #eee; color: #555; font-size: 13px; padding: 6px 15px; }
+        .sub-nav button.active { background: var(--accent); color: white; }
+
+        .container { max-width: 1200px; margin: 1.5rem auto; padding: 0 1rem; }
         .card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #eee; }
         .hidden { display: none !important; }
-        button { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+        
+        button { border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: 600; transition: 0.2s; }
         button:hover { opacity: 0.9; }
-        input, select, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
-        .role-tag { font-size: 0.75rem; background: var(--danger); padding: 4px 10px; border-radius: 20px; color: white; margin-left: 10px; text-transform: uppercase; }
+        .btn-main { background: var(--accent); color: white; }
+        .btn-outline { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
+
+        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        
+        /* Role Tags */
+        .role-tag { font-size: 0.7rem; background: var(--danger); padding: 4px 10px; border-radius: 20px; color: white; margin-left: 10px; text-transform: uppercase; }
         
         /* Tables */
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        table th, table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
-        table th { background: #f8fafb; color: var(--secondary); }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
+        table th, table td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
+        table th { background: #f8fafb; font-weight: 600; color: var(--primary); }
 
-        /* Receipt & Balance */
-        .balance-card { background: var(--primary); color: white; padding: 20px; border-radius: 10px; text-align: center; }
-        .receipt-card { border-left: 5px solid var(--accent); background: #fafffa; padding: 15px; margin-bottom: 10px; border-radius: 8px; }
+        /* Status colors */
+        .status-paid { color: #27ae60; font-weight: bold; }
+        .status-pending { color: #f39c12; font-weight: bold; }
+
+        #stu-schedule-img { max-width: 100%; border-radius: 8px; border: 2px solid var(--border); }
     </style>
 </head>
 <body>
 
 <nav>
-    <h2 id="display-school-name">Ark Portal</h2>
+    <h2 id="display-school-name" style="margin:0">Ark Portal</h2>
     <div id="auth-ui">
-        <button id="login-btn">Secure Login</button>
+        <button id="login-btn" class="btn-main">Secure Login</button>
         <div id="user-info" class="hidden">
             <span id="user-name"></span><span id="user-role" class="role-tag"></span>
             <button id="logout-btn" style="background:#95a5a6; margin-left:10px;">Logout</button>
@@ -41,79 +59,124 @@
     </div>
 </nav>
 
+<div id="registrar-menu" class="sub-nav hidden">
+    <button onclick="showSubPage('registrar', 'enrollment-page', this)" class="active">Enrollment</button>
+    <button onclick="showSubPage('registrar', 'masterlist-page', this)">Masterlist</button>
+    <button onclick="showSubPage('registrar', 'requests-page', this)">Document Requests</button>
+    <button onclick="showSubPage('registrar', 'schedule-page', this)">Post Schedule</button>
+</div>
+
+<div id="finance-menu" class="sub-nav hidden">
+    <button onclick="showSubPage('finance', 'collections-page', this)" class="active">Collect Payment</button>
+    <button onclick="showSubPage('finance', 'history-page', this)">Payment History</button>
+</div>
+
 <div class="container">
     <div id="guest-view" class="card hidden" style="text-align:center; padding: 50px;">
         <h2>Access Pending</h2>
-        <p>Please wait for the Admin to approve your role.</p>
+        <p>Welcome. Please ask the Administrator to assign your role.</p>
     </div>
 
     <section id="admin-view" class="view hidden">
         <div class="card">
-            <h3>Admin: User & Subject Permissions</h3>
-            <div id="user-list-admin"></div>
+            <h3>User Management</h3>
+            <input type="text" id="admin-search" placeholder="Search users by name or email..." onkeyup="filterAdminUsers()">
+            <div id="user-list-admin" style="margin-top:15px;"></div>
         </div>
     </section>
 
     <section id="registrar-view" class="view hidden">
-        <div class="card">
-            <h3>Student Enrollment & Document Tracking</h3>
-            <div class="grid">
-                <input type="text" id="reg-lname" placeholder="Last Name">
-                <input type="text" id="reg-fname" placeholder="First Name">
-                <input type="email" id="reg-email" placeholder="Student Email">
-                <input type="text" id="reg-guardian" placeholder="Guardian">
+        <div id="enrollment-page" class="sub-view">
+            <div class="card">
+                <h3>New Student Enrollment</h3>
+                <div class="grid">
+                    <input type="text" id="reg-lname" placeholder="Last Name">
+                    <input type="text" id="reg-fname" placeholder="First Name">
+                    <input type="email" id="reg-email" placeholder="Google Email">
+                    <input type="text" id="reg-guardian" placeholder="Parent/Guardian Name">
+                    <input type="text" id="reg-contact" placeholder="Contact Number">
+                </div>
+                <button id="enroll-btn" class="btn-main" style="width:100%; height:50px; margin-top:15px;">FINALIZE ENROLLMENT</button>
             </div>
-            <button id="enroll-btn" style="width:100%; margin-top:10px;">Enroll Student</button>
         </div>
 
-        <div class="card">
-            <h3>Masterlist & Documents</h3>
-            <input type="text" id="search-student" placeholder="Search by name..." onkeyup="filterMasterlist()">
-            <table id="masterlist-table">
-                <thead>
-                    <tr><th>Name</th><th>Email</th><th>Documents</th><th>Status</th></tr>
-                </thead>
-                <tbody id="masterlist-body"></tbody>
-            </table>
+        <div id="masterlist-page" class="sub-view hidden">
+            <div class="card">
+                <h3>Student Masterlist</h3>
+                <input type="text" id="master-search" placeholder="Search student name..." onkeyup="filterMasterlist()">
+                <table>
+                    <thead><tr><th>Name</th><th>Email</th><th>Contact</th><th>Guardian</th></tr></thead>
+                    <tbody id="masterlist-body"></tbody>
+                </table>
+            </div>
         </div>
 
-        <div class="card">
-            <h3>Global Academic Schedule</h3>
-            <textarea id="sched-input" placeholder="Paste Schedule Details (Subject - Time - Room)"></textarea>
-            <button id="update-sched-btn" class="btn-outline">Broadcast Schedule</button>
+        <div id="requests-page" class="sub-view hidden">
+            <div class="card">
+                <h3>Document Requests</h3>
+                <p>No active requests from students.</p>
+            </div>
+        </div>
+
+        <div id="schedule-page" class="sub-view hidden">
+            <div class="card">
+                <h3>Post Class Schedule</h3>
+                <label>Paste Image URL or Base64 String:</label>
+                <textarea id="sched-img-input" rows="4" placeholder="URL of the schedule image..."></textarea>
+                <button id="update-sched-btn" class="btn-main">Update Student Dashboard</button>
+            </div>
         </div>
     </section>
 
     <section id="teacher-view" class="view hidden">
         <div class="card">
-            <h3>Grade Management</h3>
+            <h3>Grade Entry: <span id="assigned-subject-title"></span></h3>
             <div class="grid">
-                <select id="grade-student-select"><option>Select Student...</option></select>
-                <input type="text" id="grade-subject" placeholder="Subject" readonly>
-                <input type="number" id="grade-value" placeholder="Grade (e.g. 95)">
-                <button id="save-grade-btn">Post Grade</button>
+                <select id="grade-student-select"></select>
+                <input type="number" id="grade-value" placeholder="Enter Grade (0-100)">
+                <button id="save-grade-btn" class="btn-main">Submit Grade</button>
             </div>
-            <p><small>*You can only post grades for your assigned subject.</small></p>
         </div>
     </section>
 
     <section id="finance-view" class="view hidden">
-        <div class="card">
-            <h3>Finance Office</h3>
-            <div class="grid">
-                <div>
-                    <select id="pay-student-select"></select>
-                    <input type="number" id="pay-total-tuition" placeholder="Set Total Assessment (PHP)">
-                    <button id="set-tuition-btn" class="btn-outline" style="width:100%">Set Total Fee</button>
-                    <hr>
-                    <input type="number" id="pay-amount" placeholder="Payment Amount">
-                    <input type="text" id="pay-desc" placeholder="Purpose (e.g. Prelim)">
-                    <button id="pay-btn" style="width:100%">Record Payment</button>
+        <div id="collections-page" class="sub-view">
+            <div class="card">
+                <h3>Collection Counter</h3>
+                <div class="grid">
+                    <div>
+                        <label>Select Student</label>
+                        <select id="pay-student-select"></select>
+                        <label>Payment Category</label>
+                        <select id="pay-category">
+                            <option value="Tuition Fee">Tuition Fee</option>
+                            <option value="Misc. Fee">Misc. Fee</option>
+                            <option value="Intrams Fee">Intrams Fee</option>
+                            <option value="Uniform/Books">Uniform/Books</option>
+                        </select>
+                        <input type="number" id="pay-amount" placeholder="Amount (PHP)">
+                        <input type="text" id="pay-desc" placeholder="Specific Note (e.g. 2nd Installment)">
+                        <button id="pay-btn" class="btn-main" style="width:100%">Process Payment</button>
+                    </div>
+                    <div class="balance-card" style="background: #2c3e50; color:white; padding: 20px; border-radius:10px;">
+                        <h4>Balance Calculator</h4>
+                        <input type="number" id="pay-total-tuition" placeholder="Total Assessment Fee">
+                        <button onclick="setTotalAssessment()" class="btn-outline" style="border-color:white; color:white; width:100%">Update Student Total</button>
+                    </div>
                 </div>
-                <div id="finance-summary">
-                    <h4>Recent Transactions</h4>
-                    <div id="finance-log"></div>
+            </div>
+        </div>
+
+        <div id="history-page" class="sub-view hidden">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h3>Transaction History</h3>
+                    <button onclick="exportPayments()" style="background:#27ae60; color:white;">Download Excel</button>
                 </div>
+                <table id="finance-history-table">
+                    <thead><tr><th>Date</th><th>Student</th><th>Category</th><th>Amount</th></tr></thead>
+                    <tbody id="finance-log"></tbody>
+                </table>
             </div>
         </div>
     </section>
@@ -121,28 +184,30 @@
     <section id="student-view" class="view hidden">
         <div class="grid">
             <div class="card">
-                <h3>Student Profile</h3>
+                <h3>My Profile</h3>
                 <div id="stu-info-display"></div>
-                <div class="balance-card">
+                <div style="background:var(--primary); color:white; padding:20px; margin-top:15px; border-radius:8px; text-align:center;">
                     <small>Remaining Balance</small>
-                    <h2 id="stu-balance">₱0.00</h2>
+                    <h2 id="stu-balance" style="margin:5px 0">₱0.00</h2>
                 </div>
             </div>
             <div class="card">
-                <h3>Academic Schedule</h3>
-                <div id="stu-schedule-display" style="white-space: pre-line; font-family: monospace;"></div>
+                <h3>My Schedule</h3>
+                <div id="stu-schedule-container">
+                    <img id="stu-schedule-img" src="" alt="Schedule not yet posted">
+                </div>
             </div>
         </div>
         <div class="grid">
             <div class="card">
-                <h3>Grades / Report Card</h3>
-                <table id="stu-grade-table">
+                <h3>Grades</h3>
+                <table>
                     <thead><tr><th>Subject</th><th>Grade</th></tr></thead>
                     <tbody id="stu-grade-body"></tbody>
                 </table>
             </div>
             <div class="card">
-                <h3>Payment History</h3>
+                <h3>Payment Receipts</h3>
                 <div id="stu-receipt-list"></div>
             </div>
         </div>
@@ -168,7 +233,7 @@
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
-    let userData = null;
+    let currentUser = null;
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
@@ -182,23 +247,31 @@
                 await setDoc(userRef, { name: user.displayName, email: user.email, role: 'guest' });
                 snap = await getDoc(userRef);
             }
-            userData = snap.data();
-            userData.uid = user.uid;
-            showDashboard(userData);
+            currentUser = snap.data();
+            currentUser.uid = user.uid;
+            renderView(currentUser);
         } else {
-            location.reload; 
+            document.getElementById('login-btn').classList.remove('hidden');
+            document.getElementById('user-info').classList.add('hidden');
+            document.querySelectorAll('.view, .sub-nav').forEach(v => v.classList.add('hidden'));
         }
     });
 
-    function showDashboard(user) {
+    function renderView(user) {
         document.getElementById('login-btn').classList.add('hidden');
         document.getElementById('user-info').classList.remove('hidden');
         document.getElementById('user-name').innerText = user.name;
         document.getElementById('user-role').innerText = user.role;
         
         document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
-        const view = document.getElementById(`${user.role}-view`) || document.getElementById('guest-view');
-        view.classList.remove('hidden');
+        document.querySelectorAll('.sub-nav').forEach(v => v.classList.add('hidden'));
+        
+        const mainView = document.getElementById(`${user.role}-view`) || document.getElementById('guest-view');
+        mainView.classList.remove('hidden');
+
+        // Show sub-menus
+        const subNav = document.getElementById(`${user.role}-menu`);
+        if(subNav) subNav.classList.remove('hidden');
 
         if(user.role === 'admin') initAdmin();
         if(user.role === 'registrar') initRegistrar();
@@ -207,136 +280,180 @@
         if(user.role === 'student') initStudent(user);
     }
 
-    // --- ADMIN ---
+    // Helper: Sub-page switcher
+    window.showSubPage = (role, pageId, btn) => {
+        document.querySelectorAll(`#${role}-view .sub-view`).forEach(v => v.classList.add('hidden'));
+        document.getElementById(pageId).classList.remove('hidden');
+        document.querySelectorAll(`#${role}-menu button`).forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    };
+
+    // --- ADMIN LOGIC ---
     function initAdmin() {
         onSnapshot(collection(db, "users"), (snap) => {
-            document.getElementById('user-list-admin').innerHTML = snap.docs.map(d => `
-                <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;">
-                    <span>${d.data().name} (${d.data().role})</span>
-                    <div>
-                        <input type="text" placeholder="Assign Subject" id="sub-${d.id}" value="${d.data().subject || ''}" style="width:120px; margin:0">
-                        <select onchange="updateUser('${d.id}', this.value, document.getElementById('sub-${d.id}').value)">
-                            <option value="">Change Role...</option>
+            const container = document.getElementById('user-list-admin');
+            container.innerHTML = snap.docs.map(d => {
+                const u = d.data();
+                return `
+                <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:10px 15px;">
+                    <div><strong>${u.name}</strong><br><small>${u.email}</small></div>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" placeholder="Subject" id="sub-${d.id}" value="${u.subject || ''}" style="width:100px; margin:0">
+                        <select onchange="updateUserRole('${d.id}', this.value, document.getElementById('sub-${d.id}').value)" style="width:120px; margin:0">
+                            <option value="">Set Role...</option>
                             <option value="registrar">Registrar</option>
                             <option value="teacher">Teacher</option>
                             <option value="finance">Finance</option>
                             <option value="student">Student</option>
                         </select>
                     </div>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
         });
     }
-    window.updateUser = async (id, role, subject) => {
+    window.updateUserRole = async (id, role, subject) => {
+        if(!role) return;
         await updateDoc(doc(db, "users", id), { role, subject });
-        alert("Permissions updated");
+        alert("User Updated!");
     };
 
-    // --- REGISTRAR ---
+    // --- REGISTRAR LOGIC ---
     function initRegistrar() {
         onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
-            const body = document.getElementById('masterlist-body');
-            body.innerHTML = snap.docs.map(d => `
+            document.getElementById('masterlist-body').innerHTML = snap.docs.map(d => `
                 <tr>
                     <td>${d.data().name}</td>
                     <td>${d.data().email}</td>
-                    <td>${d.data().guardian || 'N/A'}</td>
-                    <td><button onclick="alert('Docs: B-Cert, Form 138')" class="btn-outline">View Docs</button></td>
+                    <td>${d.data().contact || '-'}</td>
+                    <td>${d.data().guardian || '-'}</td>
                 </tr>
             `).join('');
         });
     }
+
     document.getElementById('enroll-btn').onclick = async () => {
         const email = document.getElementById('reg-email').value;
-        await setDoc(doc(db, "users", email), { // Using email as ID for easier lookup
-            name: document.getElementById('reg-fname').value + " " + document.getElementById('reg-lname').value,
+        if(!email) return alert("Email required");
+        await setDoc(doc(db, "users", email), {
+            name: `${document.getElementById('reg-fname').value} ${document.getElementById('reg-lname').value}`,
             email: email,
             guardian: document.getElementById('reg-guardian').value,
-            role: 'student'
+            contact: document.getElementById('reg-contact').value,
+            role: 'student',
+            totalAssessment: 0
         });
-        alert("Student record created");
+        alert("Student Enrolled Successfully!");
     };
 
     document.getElementById('update-sched-btn').onclick = async () => {
-        await setDoc(doc(db, "settings", "schedule"), { content: document.getElementById('sched-input').value });
-        alert("Schedule Updated");
+        const url = document.getElementById('sched-img-input').value;
+        await setDoc(doc(db, "settings", "schedule"), { imgUrl: url });
+        alert("Schedule Image Updated!");
     };
 
-    // --- TEACHER ---
+    // --- FINANCE LOGIC ---
+    function initFinance() {
+        onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
+            const options = snap.docs.map(d => `<option value="${d.data().email}">${d.data().name}</option>`).join('');
+            document.getElementById('pay-student-select').innerHTML = options;
+        });
+
+        onSnapshot(query(collection(db, "payments"), orderBy("timestamp", "desc")), (snap) => {
+            document.getElementById('finance-log').innerHTML = snap.docs.map(d => `
+                <tr>
+                    <td>${d.data().date}</td>
+                    <td>${d.data().studentEmail}</td>
+                    <td>${d.data().category}</td>
+                    <td>₱${d.data().amount}</td>
+                </tr>
+            `).join('');
+        });
+    }
+
+    window.setTotalAssessment = async () => {
+        const email = document.getElementById('pay-student-select').value;
+        const total = document.getElementById('pay-total-tuition').value;
+        await updateDoc(doc(db, "users", email), { totalAssessment: Number(total) });
+        alert("Assessment Fee Set!");
+    };
+
+    document.getElementById('pay-btn').onclick = async () => {
+        const amount = document.getElementById('pay-amount').value;
+        if(!amount) return alert("Enter amount");
+        await addDoc(collection(db, "payments"), {
+            studentEmail: document.getElementById('pay-student-select').value,
+            category: document.getElementById('pay-category').value,
+            amount: Number(amount),
+            description: document.getElementById('pay-desc').value,
+            date: new Date().toLocaleDateString(),
+            timestamp: new Date()
+        });
+        alert("Payment Recorded!");
+    };
+
+    window.exportPayments = async () => {
+        const snap = await getDocs(collection(db, "payments"));
+        const data = snap.docs.map(d => d.data());
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Payments");
+        XLSX.writeFile(wb, "Payment_Report.xlsx");
+    };
+
+    // --- TEACHER LOGIC ---
     function initTeacher(user) {
-        document.getElementById('grade-subject').value = user.subject || "No Subject Assigned";
+        document.getElementById('assigned-subject-title').innerText = user.subject || "No Subject Assigned";
         onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
             document.getElementById('grade-student-select').innerHTML = snap.docs.map(d => `<option value="${d.data().email}">${d.data().name}</option>`).join('');
         });
     }
-    document.getElementById('save-grade-btn').onclick = async () => {
-        const studentEmail = document.getElementById('grade-student-select').value;
-        const subject = userData.subject;
-        const grade = document.getElementById('grade-value').value;
-        await addDoc(collection(db, "grades"), { studentEmail, subject, grade, timestamp: new Date() });
-        alert("Grade Posted");
-    };
 
-    // --- FINANCE ---
-    function initFinance() {
-        onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
-            document.getElementById('pay-student-select').innerHTML = snap.docs.map(d => `<option value="${d.data().email}">${d.data().name}</option>`).join('');
-        });
-    }
-    document.getElementById('set-tuition-btn').onclick = async () => {
-        const email = document.getElementById('pay-student-select').value;
-        await updateDoc(doc(db, "users", email), { totalAssessment: document.getElementById('pay-total-tuition').value });
-        alert("Assessment Updated");
-    };
-    document.getElementById('pay-btn').onclick = async () => {
-        await addDoc(collection(db, "payments"), {
-            studentEmail: document.getElementById('pay-student-select').value,
-            amount: document.getElementById('pay-amount').value,
-            description: document.getElementById('pay-desc').value,
+    document.getElementById('save-grade-btn').onclick = async () => {
+        const val = document.getElementById('grade-value').value;
+        await addDoc(collection(db, "grades"), {
+            studentEmail: document.getElementById('grade-student-select').value,
+            subject: currentUser.subject,
+            grade: val,
             timestamp: new Date()
         });
-        alert("Payment Recorded");
+        alert("Grade Posted!");
     };
 
-    // --- STUDENT ---
+    // --- STUDENT LOGIC ---
     async function initStudent(user) {
-        // Info & Balance
         onSnapshot(doc(db, "users", user.uid), async (s) => {
             const data = s.data();
             document.getElementById('stu-info-display').innerHTML = `<strong>${data.name}</strong><br>${data.email}`;
             
             // Calculate Balance
             const paySnap = await getDocs(query(collection(db, "payments"), where("studentEmail", "==", user.email)));
-            let totalPaid = 0;
-            paySnap.forEach(p => totalPaid += Number(p.data().amount));
-            const balance = (data.totalAssessment || 0) - totalPaid;
+            let paid = 0;
+            paySnap.forEach(p => paid += p.data().amount);
+            const balance = (data.totalAssessment || 0) - paid;
             document.getElementById('stu-balance').innerText = `₱${balance.toLocaleString()}`;
         });
 
-        // Schedule
         onSnapshot(doc(db, "settings", "schedule"), (s) => {
-            document.getElementById('stu-schedule-display').innerText = s.exists() ? s.data().content : "No schedule uploaded.";
+            if(s.exists()) document.getElementById('stu-schedule-img').src = s.data().imgUrl;
         });
 
-        // Grades
         onSnapshot(query(collection(db, "grades"), where("studentEmail", "==", user.email)), (snap) => {
             document.getElementById('stu-grade-body').innerHTML = snap.docs.map(d => `
                 <tr><td>${d.data().subject}</td><td><strong>${d.data().grade}</strong></td></tr>
             `).join('');
         });
 
-        // Receipts
         onSnapshot(query(collection(db, "payments"), where("studentEmail", "==", user.email)), (snap) => {
             document.getElementById('stu-receipt-list').innerHTML = snap.docs.map(d => `
-                <div class="receipt-card">
-                    <strong>${d.data().description}</strong><br>
-                    <small>${d.data().timestamp.toDate().toLocaleDateString()}</small>
-                    <h3 style="margin:0; color:var(--accent)">₱${d.data().amount}</h3>
+                <div class="card" style="margin-bottom:10px; border-left: 5px solid var(--accent)">
+                    <strong>${d.data().category}</strong> - ₱${d.data().amount}<br>
+                    <small>${d.data().date} | ${d.data().description}</small>
                 </div>
             `).join('');
         });
     }
 
+    // Auth Actions
     document.getElementById('login-btn').onclick = () => signInWithPopup(auth, provider);
     document.getElementById('logout-btn').onclick = () => signOut(auth).then(() => location.reload());
 
