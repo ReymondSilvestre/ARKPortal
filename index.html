@@ -6,50 +6,40 @@
     <title>Ark Portal - SMS Pro Elite</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { 
-            --primary: #2c3e50; --secondary: #34495e; --accent: #18bc9c; 
-            --bg: #f4f7f6; --danger: #e74c3c; --info: #3498db; --warning: #f39c12; 
+        :root {
+            --primary: #2c3e50; --secondary: #34495e; --accent: #18bc9c;
+            --bg: #f4f7f6; --danger: #e74c3c; --info: #3498db; --warning: #f39c12;
             --white: #ffffff; --border: #dfe6e9;
         }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: var(--bg); color: #333; }
-        
         nav { background: var(--primary); color: white; padding: 0.8rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
-        
         .role-nav-container { display: flex; align-items: center; gap: 20px; }
         .sub-nav { background: var(--white); border-bottom: 1px solid var(--border); padding: 10px 2rem; display: flex; gap: 15px; overflow-x: auto; }
         .sub-nav button { background: #eee; color: #555; font-size: 13px; padding: 6px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; flex-shrink: 0; }
         .sub-nav button.active { background: var(--accent); color: white; }
-
         .container { max-width: 1200px; margin: 1.5rem auto; padding: 0 1rem; }
         .card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #eee; }
         .hidden { display: none !important; }
-        
         button { border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: 600; transition: 0.2s; }
         button:hover { opacity: 0.9; }
         .btn-main { background: var(--accent); color: white; }
         .btn-outline { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
         .btn-danger { background: var(--danger); color: white; }
         .btn-info { background: var(--info); color: white; }
-
         input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
         .role-tag { font-size: 0.7rem; background: var(--danger); padding: 4px 10px; border-radius: 20px; color: white; margin-left: 10px; text-transform: uppercase; }
-        
         table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; margin-top: 10px; }
         table th, table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
         table th { background: #f8fafb; color: var(--primary); }
-
         .action-btns { display: flex; gap: 5px; }
         .action-btns button { padding: 5px 10px; font-size: 12px; }
-
         #stu-schedule-img { max-width: 100%; border-radius: 8px; border: 2px solid var(--border); }
-        
         .breakdown-item { display: flex; gap: 10px; align-items: center; margin-bottom: 5px; }
         .fee-tag { background: #f1f2f6; padding: 2px 8px; border-radius: 4px; font-size: 11px; color: #666; margin-right: 5px; }
     </style>
 </head>
 <body>
-
 <nav>
     <h2 style="margin:0">Ark Portal</h2>
     <div id="auth-ui">
@@ -68,24 +58,20 @@
         <button onclick="showSubPage('admin', 'admin-users-page', this)" class="active">User Management</button>
         <button onclick="showSubPage('admin', 'admin-logs-page', this)">System Logs</button>
     </div>
-
     <div id="registrar-menu" class="sub-nav hidden">
         <button onclick="showSubPage('registrar', 'enrollment-page', this)" class="active">Enrollment</button>
         <button onclick="showSubPage('registrar', 'masterlist-page', this)">Masterlist & CRUD</button>
         <button onclick="showSubPage('registrar', 'requests-page', this)">Document Requests</button>
         <button onclick="showSubPage('registrar', 'schedule-page', this)">Post Schedule</button>
     </div>
-
     <div id="teacher-menu" class="sub-nav hidden">
         <button onclick="showSubPage('teacher', 'grading-page', this)" class="active">Grading Portal</button>
     </div>
-
     <div id="finance-menu" class="sub-nav hidden">
         <button onclick="showSubPage('finance', 'collections-page', this)" class="active">Collect Payment</button>
         <button onclick="showSubPage('finance', 'assessment-page', this)">Fee Assessments</button>
         <button onclick="showSubPage('finance', 'history-page', this)">Payment History</button>
     </div>
-
     <div id="student-menu" class="sub-nav hidden">
         <button onclick="showSubPage('student', 'stu-profile-page', this)" class="active">My Profile</button>
         <button onclick="showSubPage('student', 'stu-grades-page', this)">Grades</button>
@@ -133,7 +119,6 @@
                 <button id="enroll-btn" class="btn-main" style="width:100%; margin-top:20px;">ENROLL & CREATE ACCOUNT</button>
             </div>
         </div>
-
         <div id="masterlist-page" class="sub-view hidden">
             <div class="card">
                 <h3>Student Masterlist</h3>
@@ -145,14 +130,12 @@
                 </div>
             </div>
         </div>
-
         <div id="requests-page" class="sub-view hidden">
             <div class="card">
                 <h3>Pending Requests</h3>
                 <div id="admin-request-list"></div>
             </div>
         </div>
-
         <div id="schedule-page" class="sub-view hidden">
             <div class="card">
                 <h3>Broadcast Schedule</h3>
@@ -290,7 +273,7 @@
             <button onclick="addFeeItem()" class="btn-main">Add</button>
         </div>
         <div style="margin-top:20px; text-align:right;">
-            <button onclick="saveFeeBreakdown()" class="btn-main">Save</button>
+            <button id="save-fee-btn" onclick="saveFeeBreakdown()" class="btn-main">Save</button>
             <button onclick="closeModal()" class="btn-outline">Cancel</button>
         </div>
     </div>
@@ -317,12 +300,13 @@
 
     let currentUser = null;
     let currentStudentId = null;
+    let financeStudentsCache = [];
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             let userRef = doc(db, "users", user.uid);
             let snap = await getDoc(userRef);
-            
+
             if (!snap.exists()) {
                 const preCreatedRef = doc(db, "users", user.email);
                 const preSnap = await getDoc(preCreatedRef);
@@ -341,7 +325,7 @@
                 await setDoc(userRef, { name: user.displayName, email: user.email, role: 'guest' });
                 snap = await getDoc(userRef);
             }
-            
+
             currentUser = snap.data();
             currentUser.uid = user.uid;
             renderView(currentUser);
@@ -356,18 +340,20 @@
         document.getElementById('login-btn').classList.add('hidden');
         document.getElementById('user-info').classList.remove('hidden');
         document.getElementById('user-name').innerText = user.name;
-        document.getElementById('user-role').innerText = user.role;
+        document.getElementById('user-role').innerText = user.role?.toUpperCase() || 'GUEST';
         document.querySelectorAll('.view, .sub-nav').forEach(v => v.classList.add('hidden'));
-        const mainView = document.getElementById(`${user.role}-view`) || document.getElementById('guest-view');
-        if(mainView) mainView.classList.remove('hidden');
-        const subNav = document.getElementById(`${user.role}-menu`);
-        if(subNav) subNav.classList.remove('hidden');
 
-        if(user.role === 'admin') initAdmin();
-        if(user.role === 'registrar') initRegistrar();
-        if(user.role === 'teacher') initTeacher(user);
-        if(user.role === 'finance') initFinance();
-        if(user.role === 'student') initStudent(user);
+        const mainView = document.getElementById(`${user.role}-view`) || document.getElementById('guest-view');
+        if (mainView) mainView.classList.remove('hidden');
+
+        const subNav = document.getElementById(`${user.role}-menu`);
+        if (subNav) subNav.classList.remove('hidden');
+
+        if (user.role === 'admin') initAdmin();
+        if (user.role === 'registrar') initRegistrar();
+        if (user.role === 'teacher') initTeacher(user);
+        if (user.role === 'finance') initFinance();
+        if (user.role === 'student') initStudent(user);
     }
 
     window.showSubPage = (role, pageId, btn) => {
@@ -377,7 +363,9 @@
         btn.classList.add('active');
     };
 
-    // --- ADMIN ---
+    // ────────────────────────────────────────────────
+    // ADMIN
+    // ────────────────────────────────────────────────
     function initAdmin() {
         onSnapshot(collection(db, "users"), (snap) => {
             const container = document.getElementById('user-list-admin');
@@ -387,7 +375,7 @@
                 return `
                 <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:10px 15px;">
                     <div>
-                        <strong>${u.name}</strong> <span class="role-tag" style="background:#7f8c8d">${u.role}</span><br>
+                        <strong>${u.name || '—'}</strong> <span class="role-tag" style="background:#7f8c8d">${u.role || 'guest'}</span><br>
                         <small>${u.email}</small>
                     </div>
                     <div style="display:flex; gap:10px; align-items:center;">
@@ -400,7 +388,7 @@
                             <option value="finance" ${u.role === 'finance' ? 'selected' : ''}>Finance</option>
                             <option value="student" ${u.role === 'student' ? 'selected' : ''}>Student</option>
                         </select>
-                        <button onclick="modifyUserName('${docId}', '${u.name}')" class="btn-info" style="padding:5px 10px;">Edit</button>
+                        <button onclick="modifyUserName('${docId}', '${u.name?.replace(/'/g,"\\'") || ''}')" class="btn-info" style="padding:5px 10px;">Edit</button>
                         <button onclick="deleteUserAccount('${docId}')" class="btn-danger" style="padding:5px 10px;">Delete</button>
                         ${u.role === 'teacher' ? `<button onclick="assignSubject('${docId}')" class="btn-main" style="padding:5px 10px;">Save Subj</button>` : ''}
                     </div>
@@ -411,27 +399,27 @@
 
     window.modifyUserName = async (id, currentName) => {
         const newName = prompt("Update User Display Name:", currentName);
-        if(newName) {
-            await updateDoc(doc(db, "users", id), { name: newName });
+        if (newName && newName.trim()) {
+            await updateDoc(doc(db, "users", id), { name: newName.trim() });
             alert("Name updated.");
         }
     };
 
     window.deleteUserAccount = async (id) => {
-        if(confirm("DANGER: Are you sure? This will permanently delete the portal access for this user.")) {
+        if (confirm("DANGER: Are you sure? This will permanently delete the portal access for this user.")) {
             await deleteDoc(doc(db, "users", id));
             alert("User deleted.");
         }
     };
 
     window.updateUserRole = async (id, role) => {
-        if(!role) return;
+        if (!role) return;
         await updateDoc(doc(db, "users", id), { role });
         alert("Role Updated!");
     };
 
     window.assignSubject = async (id) => {
-        const sub = document.getElementById(`sub-${id}`).value;
+        const sub = document.getElementById(`sub-${id}`).value.trim();
         await updateDoc(doc(db, "users", id), { subject: sub });
         alert("Subject Assigned!");
     };
@@ -443,12 +431,14 @@
         });
     };
 
-    // --- REGISTRAR ---
+    // ────────────────────────────────────────────────
+    // REGISTRAR
+    // ────────────────────────────────────────────────
     function initRegistrar() {
         onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
             document.getElementById('masterlist-body').innerHTML = snap.docs.map(d => {
                 const s = d.data();
-                return `<tr><td>${s.lrn || '-'}</td><td>${s.name}</td><td>${s.email}</td>
+                return `<tr><td>${s.lrn || '-'}</td><td>${s.name || '—'}</td><td>${s.email}</td>
                 <td><button onclick="deleteUserAccount('${d.id}')" class="btn-danger">Remove</button></td></tr>`;
             }).join('');
         });
@@ -456,23 +446,25 @@
         onSnapshot(collection(db, "requests"), (snap) => {
             document.getElementById('admin-request-list').innerHTML = snap.docs.map(d => `
                 <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
-                    <div><strong>${d.data().studentName}</strong>: ${d.data().type}</div>
+                    <div><strong>${d.data().studentName || '—'}</strong>: ${d.data().type}</div>
                     <button onclick="releaseDocument('${d.id}')" class="btn-main">Mark Released</button>
                 </div>`).join('');
         });
 
         document.getElementById('update-sched-btn').onclick = async () => {
-            const url = document.getElementById('sched-img-input').value;
-            if(url) {
-                await setDoc(doc(db, "settings", "schedule"), {imgUrl: url});
+            const url = document.getElementById('sched-img-input').value.trim();
+            if (url) {
+                await setDoc(doc(db, "settings", "schedule"), { imgUrl: url });
                 alert('Schedule updated!');
+            } else {
+                alert('Please enter a valid image URL');
             }
         };
     }
 
     window.releaseDocument = async (id) => {
         const snap = await getDoc(doc(db, "requests", id));
-        if(snap.exists()){
+        if (snap.exists()) {
             const data = snap.data();
             await addDoc(collection(db, "released_docs"), { ...data, date: new Date().toLocaleDateString(), timestamp: new Date() });
             await deleteDoc(doc(db, "requests", id));
@@ -481,56 +473,83 @@
     };
 
     document.getElementById('enroll-btn').onclick = async () => {
-        const email = document.getElementById('reg-email').value;
-        if(!email) return alert("Email required!");
+        const email = document.getElementById('reg-email').value.trim();
+        if (!email) return alert("Email required!");
+
+        const name = `${document.getElementById('reg-lname').value.trim()}, ${document.getElementById('reg-fname').value.trim()}`.trim();
+
         await setDoc(doc(db, "users", email), {
-            lrn: document.getElementById('reg-lrn').value,
-            name: `${document.getElementById('reg-lname').value}, ${document.getElementById('reg-fname').value}`,
+            lrn: document.getElementById('reg-lrn').value.trim(),
+            name: name || "Unnamed Student",
             email: email,
             role: 'student',
             totalAssessment: 0,
-            feeBreakdown: {tuition: 0, misc: 0, lab: 0, other: 0},
+            feeBreakdown: { tuition: 0, misc: 0, lab: 0, other: 0 },
             voucher: document.getElementById('reg-voucher').value
         });
         alert("Enrolled!");
     };
 
-    // --- TEACHER ---
+    // ────────────────────────────────────────────────
+    // TEACHER
+    // ────────────────────────────────────────────────
     function initTeacher(user) {
         document.getElementById('assigned-subject-title').innerText = user.subject || "Not Assigned";
         onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
-            document.getElementById('grade-student-select').innerHTML = snap.docs.map(d => `<option value="${d.data().email}">${d.data().name}</option>`).join('');
+            document.getElementById('grade-student-select').innerHTML = snap.docs.map(d => {
+                const s = d.data();
+                return `<option value="${s.email}">${s.name || s.email}</option>`;
+            }).join('');
         });
     }
 
     document.getElementById('save-grade-btn').onclick = async () => {
-        if(!currentUser.subject) return alert("No assigned subject!");
+        if (!currentUser.subject) return alert("No assigned subject!");
+        const studentEmail = document.getElementById('grade-student-select').value;
+        const grade = document.getElementById('grade-value').value.trim();
+        if (!studentEmail || !grade) return alert("Select student and enter grade");
+
         await addDoc(collection(db, "grades"), {
-            studentEmail: document.getElementById('grade-student-select').value,
+            studentEmail,
             subject: currentUser.subject,
-            grade: document.getElementById('grade-value').value,
+            grade,
             timestamp: new Date()
         });
         alert("Grade Saved!");
+        document.getElementById('grade-value').value = "";
     };
 
-    // --- FINANCE ENHANCED ---
+    // ────────────────────────────────────────────────
+    // FINANCE
+    // ────────────────────────────────────────────────
+    function refreshFinanceAssessment() {
+        const container = document.getElementById('finance-assessment-list');
+        if (!container) return;
+
+        container.innerHTML = financeStudentsCache.map(s => {
+            const fb = s.feeBreakdown || {};
+            const breakdownDisplay = Object.entries(fb)
+                .map(([k, v]) => `<div style="display:flex; justify-content:space-between; font-size:12px;">
+                    <span>${k.charAt(0).toUpperCase() + k.slice(1)}:</span> ₱${Number(v).toLocaleString()}</div>`)
+                .join('') || '<small style="color:#999">No fees set</small>';
+
+            return `
+            <tr>
+                <td><strong>${s.name || '—'}</strong><br><small>${s.email}</small></td>
+                <td>₱${Number(s.totalAssessment || 0).toLocaleString()}</td>
+                <td>${breakdownDisplay}</td>
+                <td><button onclick="openFeeModal('${s.id}', '${(s.name || '').replace(/'/g,"\\'")}', '${JSON.stringify(fb).replace(/'/g,"\\'")}')" class="btn-main">Edit Breakdown</button></td>
+            </tr>`;
+        }).join('');
+    }
+
     function initFinance() {
         onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
-            const students = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            document.getElementById('pay-student-select').innerHTML = students.map(s => `<option value="${s.email}">${s.name}</option>`).join('');
-            
-            document.getElementById('finance-assessment-list').innerHTML = students.map(s => {
-                const fb = s.feeBreakdown || {};
-                const breakdownDisplay = Object.entries(fb).map(([k,v]) => `<div style="display:flex; justify-content:space-between; font-size:12px;"><span>${k.charAt(0).toUpperCase() + k.slice(1)}:</span> ₱${v.toLocaleString()}</div>`).join('');
-                return `
-                <tr>
-                    <td><strong>${s.name}</strong><br><small>${s.email}</small></td>
-                    <td>₱${(s.totalAssessment || 0).toLocaleString()}</td>
-                    <td>${breakdownDisplay}</td>
-                    <td><button onclick="openFeeModal('${s.id}', '${s.name}', '${JSON.stringify(fb)}')" class="btn-main">Edit Breakdown</button></td>
-                </tr>
-            `}).join('');
+            financeStudentsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            document.getElementById('pay-student-select').innerHTML = financeStudentsCache
+                .map(s => `<option value="${s.email}">${s.name || s.email}</option>`)
+                .join('');
+            refreshFinanceAssessment();
         });
 
         onSnapshot(query(collection(db, "payments"), orderBy("timestamp", "desc")), (snap) => {
@@ -540,10 +559,10 @@
                 <tr data-student="${p.studentEmail}">
                     <td>${p.date}</td>
                     <td>${p.studentEmail}</td>
-                    <td>₱${(p.amount || 0).toLocaleString()}</td>
+                    <td>₱${Number(p.amount || 0).toLocaleString()}</td>
                     <td>${p.category}</td>
                     <td class="action-btns">
-                        <button onclick="editPayment('${d.id}', ${p.amount})" class="btn-info">Edit</button>
+                        <button onclick="editPayment('${d.id}', ${Number(p.amount || 0)})" class="btn-info">Edit</button>
                         <button onclick="deletePayment('${d.id}')" class="btn-danger">Delete</button>
                     </td>
                 </tr>`;
@@ -551,32 +570,42 @@
         });
     }
 
-    window.openFeeModal = (id, name, fbJson) => {
+    window.openFeeModal = (id, name, fbJsonEscaped) => {
         currentStudentId = id;
         document.getElementById('modal-student-name').innerText = name;
-        const fb = JSON.parse(fbJson);
-        document.getElementById('fee-list').innerHTML = Object.entries(fb).map(([name, amount]) => `
+
+        let fb = {};
+        try {
+            fb = JSON.parse(fbJsonEscaped);
+        } catch (e) {
+            console.error("Invalid fee JSON", e);
+        }
+
+        document.getElementById('fee-list').innerHTML = Object.entries(fb).map(([key, val]) => `
             <div class="breakdown-item">
-                <span class="fee-tag">${name.charAt(0).toUpperCase() + name.slice(1)}</span>
-                <input type="number" value="${amount}" data-name="${name}">
+                <span class="fee-tag">${key.charAt(0).toUpperCase() + key.slice(1)}</span>
+                <input type="number" value="${Number(val)}" data-name="${key}">
                 <button onclick="removeFeeItem(this)" class="btn-danger" style="padding:2px 6px;">X</button>
             </div>
-        `).join('');
+        `).join('') || '<p style="color:#999">No fees yet. Add below.</p>';
+
         document.getElementById('fee-modal').classList.remove('hidden');
     };
 
     window.closeModal = () => {
         document.getElementById('fee-modal').classList.add('hidden');
+        currentStudentId = null;
     };
 
     window.addFeeItem = () => {
         const name = document.getElementById('new-fee-name').value.trim().toLowerCase();
-        const amount = document.getElementById('new-fee-amount').value;
-        if(!name || !amount) return alert('Enter name and amount');
+        const amount = document.getElementById('new-fee-amount').value.trim();
+        if (!name || !amount || isNaN(amount)) return alert('Enter valid fee name and amount');
+
         document.getElementById('fee-list').innerHTML += `
             <div class="breakdown-item">
                 <span class="fee-tag">${name.charAt(0).toUpperCase() + name.slice(1)}</span>
-                <input type="number" value="${amount}" data-name="${name}">
+                <input type="number" value="${Number(amount)}" data-name="${name}">
                 <button onclick="removeFeeItem(this)" class="btn-danger" style="padding:2px 6px;">X</button>
             </div>
         `;
@@ -589,21 +618,41 @@
     };
 
     window.saveFeeBreakdown = async () => {
-        const items = document.querySelectorAll('#fee-list .breakdown-item');
-        const fb = {};
-        let total = 0;
-        items.forEach(item => {
-            const name = item.querySelector('input').dataset.name;
-            const amount = Number(item.querySelector('input').value) || 0;
-            fb[name] = amount;
-            total += amount;
-        });
-        await updateDoc(doc(db, "users", currentStudentId), { 
-            feeBreakdown: fb,
-            totalAssessment: total
-        });
-        closeModal();
-        alert("Breakdown Updated!");
+        if (!currentStudentId) return alert("No student selected.");
+
+        const saveBtn = document.getElementById('save-fee-btn');
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Saving...";
+
+        try {
+            const items = document.querySelectorAll('#fee-list .breakdown-item');
+            const fb = {};
+            let total = 0;
+
+            items.forEach(item => {
+                const name = item.querySelector('input').dataset.name;
+                const amount = Number(item.querySelector('input').value) || 0;
+                if (name && amount >= 0) {
+                    fb[name] = amount;
+                    total += amount;
+                }
+            });
+
+            await updateDoc(doc(db, "users", currentStudentId), {
+                feeBreakdown: fb,
+                totalAssessment: total
+            });
+
+            alert("Fee breakdown updated successfully!");
+            closeModal();
+            refreshFinanceAssessment();
+        } catch (err) {
+            console.error("Save fee error:", err);
+            alert("Failed to save: " + (err.message || "Check console for details"));
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.textContent = "Save";
+        }
     };
 
     window.filterAssessment = () => {
@@ -621,7 +670,7 @@
     };
 
     window.deletePayment = async (id) => {
-        if(confirm("Confirm Delete? Student balance will update.")) {
+        if (confirm("Confirm Delete? Student balance will update.")) {
             await deleteDoc(doc(db, "payments", id));
             alert("Payment deleted.");
         }
@@ -629,15 +678,16 @@
 
     window.editPayment = async (id, currentAmount) => {
         const newAmt = prompt("Update Payment Amount:", currentAmount);
-        if(newAmt && !isNaN(newAmt)) {
+        if (newAmt !== null && !isNaN(newAmt) && Number(newAmt) >= 0) {
             await updateDoc(doc(db, "payments", id), { amount: Number(newAmt) });
             alert("Payment updated.");
         }
     };
 
     document.getElementById('pay-btn').onclick = async () => {
-        const amt = document.getElementById('pay-amount').value;
-        if(!amt) return alert("Enter amount");
+        const amt = document.getElementById('pay-amount').value.trim();
+        if (!amt || isNaN(amt) || Number(amt) <= 0) return alert("Enter valid amount");
+
         await addDoc(collection(db, "payments"), {
             studentEmail: document.getElementById('pay-student-select').value,
             amount: Number(amt),
@@ -649,68 +699,90 @@
         document.getElementById('pay-amount').value = "";
     };
 
-    // --- STUDENT ---
+    // ────────────────────────────────────────────────
+    // STUDENT
+    // ────────────────────────────────────────────────
     async function initStudent(user) {
         onSnapshot(doc(db, "users", user.uid), async (s) => {
-            if(!s.exists()) return;
+            if (!s.exists()) return;
             const d = s.data();
-            document.getElementById('stu-info-display').innerHTML = `<p><strong>${d.name}</strong><br>${d.email}<br>LRN: ${d.lrn || 'N/A'}</p>`;
-            
-            // Fee Breakdown Logic
+
+            document.getElementById('stu-info-display').innerHTML = `
+                <p><strong>${d.name || '—'}</strong><br>${d.email}<br>LRN: ${d.lrn || 'N/A'}</p>`;
+
             const fb = d.feeBreakdown || {};
             document.getElementById('stu-breakdown-display').innerHTML = `
                 <div style="font-weight:bold; margin-bottom:5px;">Fee Breakdown:</div>
-                ${Object.entries(fb).map(([k,v]) => `<div style="display:flex; justify-content:space-between;"><span>${k.charAt(0).toUpperCase() + k.slice(1)}:</span> <span>₱${v.toLocaleString()}</span></div>`).join('')}
+                ${Object.entries(fb).map(([k,v]) => `
+                    <div style="display:flex; justify-content:space-between;">
+                        <span>${k.charAt(0).toUpperCase() + k.slice(1)}:</span>
+                        <span>₱${Number(v).toLocaleString()}</span>
+                    </div>`).join('')}
                 <hr style="opacity:0.2">
-                <div style="display:flex; justify-content:space-between; font-weight:bold;"><span>Total Required:</span> <span>₱${(d.totalAssessment || 0).toLocaleString()}</span></div>
+                <div style="display:flex; justify-content:space-between; font-weight:bold;">
+                    <span>Total Required:</span>
+                    <span>₱${Number(d.totalAssessment || 0).toLocaleString()}</span>
+                </div>
             `;
 
-            // Calculate Balance
             const pSnap = await getDocs(query(collection(db, "payments"), where("studentEmail", "==", user.email)));
-            let paid = 0; 
+            let paid = 0;
             let receipts = "";
             pSnap.forEach(p => {
-                paid += p.data().amount;
+                const data = p.data();
+                paid += Number(data.amount || 0);
                 receipts += `<div class="card" style="padding:10px; margin-bottom:5px; font-size:13px;">
-                                <strong>${p.data().date}</strong> - ${p.data().category}: ₱${p.data().amount.toLocaleString()}
-                             </div>`;
+                    <strong>${data.date}</strong> - ${data.category}: ₱${Number(data.amount || 0).toLocaleString()}
+                </div>`;
             });
-            
-            const total = d.totalAssessment || 0;
-            document.getElementById('stu-balance').innerText = `₱${(total - paid).toLocaleString()}`;
-            document.getElementById('stu-receipt-list').innerHTML = receipts || "No payment records found.";
+
+            const balance = Number(d.totalAssessment || 0) - paid;
+            document.getElementById('stu-balance').innerText = `₱${balance.toLocaleString()}`;
+            document.getElementById('stu-receipt-list').innerHTML = receipts || "<p>No payment records found.</p>";
         });
 
         onSnapshot(query(collection(db, "grades"), where("studentEmail", "==", user.email)), (snap) => {
-            document.getElementById('stu-grade-body').innerHTML = snap.docs.map(d => `<tr><td>${d.data().subject}</td><td>${d.data().grade}</td></tr>`).join('');
+            document.getElementById('stu-grade-body').innerHTML = snap.docs.map(d => {
+                const g = d.data();
+                return `<tr><td>${g.subject}</td><td>${g.grade}</td></tr>`;
+            }).join('') || '<tr><td colspan="2">No grades yet</td></tr>';
         });
-        
+
         onSnapshot(doc(db, "settings", "schedule"), (s) => {
-            if(s.exists()) document.getElementById('stu-schedule-img').src = s.data().imgUrl;
+            if (s.exists() && s.data().imgUrl) {
+                document.getElementById('stu-schedule-img').src = s.data().imgUrl;
+            }
         });
     }
 
     document.getElementById('stu-req-btn').onclick = async () => {
+        const type = document.getElementById('stu-req-type').value;
         await addDoc(collection(db, "requests"), {
             studentEmail: currentUser.email,
             studentName: currentUser.name,
-            type: document.getElementById('stu-req-type').value,
+            type,
             timestamp: new Date()
         });
         alert("Request Sent!");
     };
 
+    // ────────────────────────────────────────────────
+    // GLOBAL
+    // ────────────────────────────────────────────────
     document.getElementById('login-btn').onclick = () => signInWithPopup(auth, provider);
     document.getElementById('logout-btn').onclick = () => signOut(auth).then(() => location.reload());
-    
-    // Global Access
+
     window.deleteUserAccount = deleteUserAccount;
     window.modifyUserName = modifyUserName;
     window.updateUserRole = updateUserRole;
     window.assignSubject = assignSubject;
     window.deletePayment = deletePayment;
     window.editPayment = editPayment;
-
+    window.openFeeModal = openFeeModal;
+    window.closeModal = closeModal;
+    window.addFeeItem = addFeeItem;
+    window.removeFeeItem = removeFeeItem;
+    window.saveFeeBreakdown = saveFeeBreakdown;
 </script>
 </body>
 </html>
