@@ -210,10 +210,22 @@
 
         <div id="history-page" class="sub-view hidden">
             <div class="card">
-                <table id="finance-log-table">
-                    <thead><tr><th>Date</th><th>Student</th><th>Amount</th><th>Category</th></tr></thead>
-                    <tbody id="finance-log"></tbody>
-                </table>
+                <h3>Payment History</h3>
+                <input type="text" id="finance-history-search" placeholder="Filter by Student Name or Email..." onkeyup="filterFinanceHistory()" style="margin-bottom: 15px;">
+                <div style="overflow-x:auto;">
+                    <table id="finance-log-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Student Email</th>
+                                <th>Amount</th>
+                                <th>Category</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="finance-log"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </section>
@@ -464,14 +476,10 @@
 
     // --- ENHANCED FINANCE ---
     function initFinance() {
-        // Populating Select for Payments
         onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
             const students = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            
-            // Update Payment dropdown
             document.getElementById('pay-student-select').innerHTML = students.map(s => `<option value="${s.email}">${s.name}</option>`).join('');
             
-            // Update Assessment Table
             document.getElementById('finance-assessment-list').innerHTML = students.map(s => `
                 <tr>
                     <td>${s.name}</td>
@@ -483,9 +491,44 @@
         });
 
         onSnapshot(query(collection(db, "payments"), orderBy("timestamp", "desc")), (snap) => {
-            document.getElementById('finance-log').innerHTML = snap.docs.map(d => `<tr><td>${d.data().date}</td><td>${d.data().studentEmail}</td><td>₱${d.data().amount}</td><td>${d.data().category}</td></tr>`).join('');
+            document.getElementById('finance-log').innerHTML = snap.docs.map(d => {
+                const p = d.data();
+                return `
+                <tr data-student="${p.studentEmail}">
+                    <td>${p.date}</td>
+                    <td>${p.studentEmail}</td>
+                    <td>₱${(p.amount || 0).toLocaleString()}</td>
+                    <td>${p.category}</td>
+                    <td class="action-btns">
+                        <button onclick="editPayment('${d.id}', ${p.amount})" class="btn-info">Edit</button>
+                        <button onclick="deletePayment('${d.id}')" class="btn-danger">Delete</button>
+                    </td>
+                </tr>`;
+            }).join('');
         });
     }
+
+    window.filterFinanceHistory = () => {
+        const q = document.getElementById('finance-history-search').value.toLowerCase();
+        document.querySelectorAll('#finance-log tr').forEach(row => {
+            row.style.display = row.innerText.toLowerCase().includes(q) ? 'table-row' : 'none';
+        });
+    };
+
+    window.deletePayment = async (id) => {
+        if(confirm("Confirm Delete: This payment will be removed and the student's balance will be updated.")) {
+            await deleteDoc(doc(db, "payments", id));
+            alert("Payment deleted.");
+        }
+    };
+
+    window.editPayment = async (id, currentAmount) => {
+        const newAmt = prompt("Update Payment Amount:", currentAmount);
+        if(newAmt && !isNaN(newAmt)) {
+            await updateDoc(doc(db, "payments", id), { amount: Number(newAmt) });
+            alert("Payment updated.");
+        }
+    };
 
     window.updateIndividualAssessment = async (userId) => {
         const val = document.getElementById(`new-assess-${userId}`).value;
@@ -553,8 +596,15 @@
     document.getElementById('login-btn').onclick = () => signInWithPopup(auth, provider);
     document.getElementById('logout-btn').onclick = () => signOut(auth).then(() => location.reload());
     
-    // Global Access
+    // Global Access for Window functions
     window.deleteUserAccount = deleteUserAccount;
+    window.modifyUserName = modifyUserName;
+    window.updateUserRole = updateUserRole;
+    window.assignSubject = assignSubject;
+    window.updateIndividualAssessment = updateIndividualAssessment;
+    window.deletePayment = deletePayment;
+    window.editPayment = editPayment;
+
 </script>
 </body>
 </html>
