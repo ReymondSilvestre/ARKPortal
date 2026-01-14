@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ark Portal - Advanced SMS</title>
+    <title>Ark Portal - SMS Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { --primary: #2c3e50; --secondary: #34495e; --accent: #18bc9c; --bg: #f4f7f6; --danger: #e74c3c; --info: #3498db; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: var(--bg); color: #333; }
@@ -12,17 +13,23 @@
         .card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #eee; }
         .hidden { display: none !important; }
         button { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: 600; transition: 0.2s; }
-        button:hover { opacity: 0.9; }
-        .btn-secondary { background: var(--secondary); }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-outline { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
+        .btn-danger { background: var(--danger); }
         input, textarea, select { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-size: 14px; }
+        
+        /* Registrar UI Updates */
+        .req-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; background: #f8fafb; padding: 15px; border-radius: 8px; border: 1px solid #e1e8ed; }
+        .req-tag { display: flex; align-items: center; justify-content: space-between; background: white; padding: 8px 12px; border-radius: 6px; border: 1px solid #ddd; font-size: 13px; }
+        
         .role-tag { font-size: 0.75rem; background: var(--danger); padding: 4px 10px; border-radius: 20px; color: white; margin-left: 10px; text-transform: uppercase; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .flex-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        .requirement-item { display: flex; align-items: center; gap: 10px; background: #f9f9f9; padding: 5px 10px; border-radius: 4px; margin-bottom: 5px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
-        .stat-card { background: #fff; border-left: 5px solid var(--accent); padding: 15px; border-radius: 8px; }
-        .receipt-preview { border: 2px dashed #ccc; padding: 20px; margin-top: 10px; font-family: 'Courier New', Courier, monospace; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+        th { background: #f4f7f6; color: var(--secondary); }
+        
+        .receipt-card { border-left: 5px solid #27ae60; background: #fafffa; padding: 15px; margin-bottom: 10px; position: relative; }
+        .receipt-card small { color: #666; }
     </style>
 </head>
 <body>
@@ -40,118 +47,85 @@
 
 <div class="container">
     <div id="guest-view" class="card hidden" style="text-align:center; padding: 50px;">
-        <h2 style="color: #856404;">Pending Approval</h2>
-        <p>Welcome. Your account is registered but access is restricted. Contact admin to assign your role.</p>
+        <h2>Access Pending</h2>
+        <p>Please contact the Administrator to assign your system role.</p>
     </div>
-
-    <section id="admin-view" class="view hidden">
-        <div class="card">
-            <h3>System Admin: User Controls</h3>
-            <div class="grid">
-                <div>
-                    <label>School Name:</label>
-                    <input type="text" id="school-name-input" placeholder="Ark Academy">
-                    <button id="save-settings">Update Branding</button>
-                </div>
-            </div>
-            <h4>Current System Users</h4>
-            <div id="user-list-admin"></div>
-        </div>
-    </section>
 
     <section id="registrar-view" class="view hidden">
         <div class="card">
-            <h3>Registrar: Student Enrollment</h3>
+            <h3>Student Enrollment Form</h3>
             <div class="grid">
                 <input type="text" id="reg-lname" placeholder="Last Name">
                 <input type="text" id="reg-fname" placeholder="First Name">
                 <input type="text" id="reg-mname" placeholder="Middle Name">
                 <input type="number" id="reg-age" placeholder="Age">
-                <input type="date" id="reg-bday" placeholder="Birthday">
+                <input type="date" id="reg-bday" title="Birthday">
                 <input type="text" id="reg-contact" placeholder="Contact No.">
                 <input type="text" id="reg-address" placeholder="Home Address">
-                <input type="text" id="reg-guardian" placeholder="Contact Person (Guardian)">
-                <input type="email" id="reg-email" placeholder="Google Account Email">
+                <input type="text" id="reg-guardian" placeholder="Guardian Name">
+                <input type="email" id="reg-email" placeholder="Student Google Email">
             </div>
             
-            <h4>Requirement Checklist</h4>
-            <div id="req-list-container">
-                </div>
-            <div class="flex-row">
-                <input type="text" id="new-req-input" placeholder="Add new requirement..." style="width: 200px;">
-                <button onclick="addRequirementItem()">+</button>
+            <h4 style="margin-top:20px;">Requirements Management</h4>
+            <div id="req-list-container" class="req-grid"></div>
+            <div style="margin-top:10px; display: flex; gap:10px;">
+                <input type="text" id="new-req-input" placeholder="New Requirement Name..." style="flex:1">
+                <button onclick="addRequirementItem()" class="btn-outline">Add Field</button>
             </div>
-            <button id="enroll-btn" style="margin-top:20px; width:100%;">Finalize Enrollment</button>
-        </div>
-
-        <div class="card">
-            <h3>Class Schedule Management</h3>
-            <select id="sched-student-select"><option>Loading Students...</option></select>
-            <input type="text" id="sched-img-url" placeholder="Paste Schedule Image URL (or use Firebase Storage link)">
-            <button id="save-sched-btn" class="btn-secondary">Upload/Link Schedule</button>
+            <button id="enroll-btn" style="margin-top:25px; width:100%; height: 50px;">REGISTER STUDENT</button>
         </div>
     </section>
 
     <section id="finance-view" class="view hidden">
         <div class="card">
-            <h3>Bursar & Finance Office</h3>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3>Finance & Collection</h3>
+                <button onclick="exportToExcel()" style="background:#27ae60;">Download Excel Report</button>
+            </div>
+            
             <div class="grid">
                 <div>
-                    <h4>Post New Payment</h4>
+                    <h4>Post Payment</h4>
                     <select id="pay-student-select"><option>Select Student...</option></select>
+                    <input type="text" id="pay-desc" placeholder="Payment Description (e.g. Tuition Phase 1)">
                     <select id="pay-type-select">
                         <option value="Tuition Fee">Tuition Fee</option>
                         <option value="Misc Fee">Misc Fee</option>
-                        <option value="Intrams Fee">Intrams Fee</option>
-                        <option value="Graduation Fee">Graduation Fee</option>
+                        <option value="Uniform">Uniform</option>
                     </select>
-                    <input type="number" id="pay-amount" placeholder="Amount Paid">
-                    <select id="pay-method">
-                        <option value="Full Payment">Full Payment</option>
-                        <option value="Installment">Installment</option>
-                    </select>
-                    <button id="pay-btn" style="background:#27ae60; width:100%;">Process Payment & Issue Receipt</button>
+                    <input type="number" id="pay-amount" placeholder="Amount (PHP)">
+                    <button id="pay-btn" style="width:100%;">Process & Sync Receipt</button>
                 </div>
-                <div id="receipt-area" class="receipt-preview hidden">
-                    <h4>OFFICIAL RECEIPT</h4>
-                    <div id="receipt-content"></div>
-                    <button onclick="window.print()" style="margin-top:10px; font-size:10px;">Print Receipt</button>
+                <div>
+                    <h4>Payment Logs</h4>
+                    <div id="finance-log-container" style="max-height: 300px; overflow-y: auto;">
+                        <p>Loading records...</p>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
-
-    <section id="teacher-view" class="view hidden">
-        <div class="card">
-            <h3>Faculty Academic Updates</h3>
-            <select id="teacher-student-select"></select>
-            <input type="text" id="lesson-title" placeholder="Subject/Topic">
-            <textarea id="grade-input" rows="4" placeholder="Feedback or Grades..."></textarea>
-            <button id="send-update">Post to Student Portal</button>
         </div>
     </section>
 
     <section id="student-view" class="view hidden">
         <div class="grid">
-            <div class="card stat-card">
-                <h3>Balance: <span id="stat-balance" style="color:var(--danger)">₱0.00</span></h3>
-                <p>Status: <span id="stat-status">Active</span></p>
+            <div class="card">
+                <h3>Financial Statement</h3>
+                <div id="student-receipt-list">
+                    <p>No payment records found.</p>
+                </div>
             </div>
             <div class="card">
-                <h3>My Schedule</h3>
-                <div id="display-schedule">No schedule uploaded yet.</div>
+                <h3>Academic & Schedule</h3>
+                <div id="display-schedule"></div>
+                <div id="lesson-list"></div>
             </div>
-        </div>
-        <div class="card">
-            <h4>Academic Records</h4>
-            <div id="lesson-list"></div>
         </div>
     </section>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, addDoc, onSnapshot, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, addDoc, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     const firebaseConfig = {
@@ -168,198 +142,121 @@
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
-    const REYMONDE = "reymonde.silvestre@gmail.com";
-
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            document.getElementById('login-btn').classList.add('hidden');
-            document.getElementById('user-info').classList.remove('hidden');
-            document.getElementById('user-name').innerText = user.displayName;
-
             const userRef = doc(db, "users", user.uid);
             let userSnap = await getDoc(userRef);
-
-            if (user.email === REYMONDE) {
+            
+            // Check if Super Admin
+            if (user.email === "reymonde.silvestre@gmail.com") {
                 await setDoc(userRef, { name: user.displayName, email: user.email, role: 'admin' }, { merge: true });
-                userSnap = await getDoc(userRef);
-            } else if (!userSnap.exists()) {
-                await setDoc(userRef, { name: user.displayName, email: user.email, role: 'guest', balance: 0 });
                 userSnap = await getDoc(userRef);
             }
 
-            switchView(userSnap.data().role, user);
-        } else {
-            document.getElementById('login-btn').classList.remove('hidden');
-            document.getElementById('user-info').classList.add('hidden');
-            document.querySelectorAll('.view, .pending-box').forEach(v => v.classList.add('hidden'));
+            document.getElementById('login-btn').classList.add('hidden');
+            document.getElementById('user-info').classList.remove('hidden');
+            document.getElementById('user-name').innerText = user.displayName;
+            switchView(userSnap.data()?.role || 'guest', user);
         }
     });
 
     function switchView(role, user) {
         document.querySelectorAll('.view, #guest-view').forEach(v => v.classList.add('hidden'));
         document.getElementById('user-role').innerText = role;
+        const view = document.getElementById(`${role}-view`);
+        if(view) view.classList.remove('hidden');
 
-        if (role === 'guest') {
-            document.getElementById('guest-view').classList.remove('hidden');
-        } else {
-            const el = document.getElementById(`${role}-view`);
-            if (el) el.classList.remove('hidden');
-            
-            if (role === 'admin') initAdmin();
-            if (role === 'registrar') initRegistrar();
-            if (role === 'finance') initFinance();
-            if (role === 'teacher') initTeacher();
-            if (role === 'student') initStudent(user);
-            
-            listenToSchoolName();
-        }
+        if(role === 'registrar') initRegistrar();
+        if(role === 'finance') initFinance();
+        if(role === 'student') initStudent(user);
     }
 
     // --- REGISTRAR LOGIC ---
-    let requirements = ["Birth Certificate", "Form 137", "Good Moral"];
-
+    let reqs = ["Birth Certificate", "Report Card", "Good Moral"];
     window.addRequirementItem = () => {
         const val = document.getElementById('new-req-input').value;
-        if(val) { requirements.push(val); renderReqs(); document.getElementById('new-req-input').value = ''; }
+        if(val) { reqs.push(val); renderReqs(); document.getElementById('new-req-input').value = ''; }
     };
-
-    window.removeReq = (idx) => { requirements.splice(idx, 1); renderReqs(); };
+    window.removeReq = (i) => { reqs.splice(i, 1); renderReqs(); };
 
     function renderReqs() {
         const cont = document.getElementById('req-list-container');
-        cont.innerHTML = requirements.map((r, i) => `
-            <div class="requirement-item">
-                <input type="checkbox" class="enroll-req-check" value="${r}"> ${r}
-                <button onclick="removeReq(${i})" style="background:none; color:red; padding:0; margin-left:auto;">×</button>
+        cont.innerHTML = reqs.map((r, i) => `
+            <div class="req-tag">
+                <span><input type="checkbox" class="enroll-check"> ${r}</span>
+                <span onclick="removeReq(${i})" style="cursor:pointer; color:red">×</span>
             </div>
         `).join('');
     }
 
-    async function initRegistrar() {
-        renderReqs();
-        onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
-            const options = snap.docs.map(d => `<option value="${d.id}">${d.data().name}</option>`).join('');
-            document.getElementById('sched-student-select').innerHTML = options;
-        });
-    }
+    function initRegistrar() { renderReqs(); }
 
     document.getElementById('enroll-btn').onclick = async () => {
-        const checked = Array.from(document.querySelectorAll('.enroll-req-check:checked')).map(c => c.value);
-        const studentData = {
+        const email = document.getElementById('reg-email').value;
+        await addDoc(collection(db, "users"), {
             name: `${document.getElementById('reg-fname').value} ${document.getElementById('reg-lname').value}`,
-            firstName: document.getElementById('reg-fname').value,
-            lastName: document.getElementById('reg-lname').value,
-            age: document.getElementById('reg-age').value,
-            birthday: document.getElementById('reg-bday').value,
-            contact: document.getElementById('reg-contact').value,
-            address: document.getElementById('reg-address').value,
-            guardian: document.getElementById('reg-guardian').value,
-            email: document.getElementById('reg-email').value,
+            email: email,
             role: 'student',
-            balance: 0,
-            submittedRequirements: checked
-        };
-        await addDoc(collection(db, "users"), studentData);
-        alert("Student Enrolled Successfully!");
-    };
-
-    document.getElementById('save-sched-btn').onclick = async () => {
-        const id = document.getElementById('sched-student-select').value;
-        const url = document.getElementById('sched-img-url').value;
-        await updateDoc(doc(db, "users", id), { scheduleUrl: url });
-        alert("Schedule Linked!");
+            enrolledAt: new Date().toLocaleDateString()
+        });
+        alert("Student Registered in Database!");
     };
 
     // --- FINANCE LOGIC ---
     async function initFinance() {
+        // Load Students for dropdown
         onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
-            const options = snap.docs.map(d => `<option value="${d.id}">${d.data().name}</option>`).join('');
-            document.getElementById('pay-student-select').innerHTML = options;
+            document.getElementById('pay-student-select').innerHTML = snap.docs.map(d => `<option value="${d.data().email}">${d.data().name}</option>`).join('');
         });
-    }
 
-    document.getElementById('pay-btn').onclick = async () => {
-        const id = document.getElementById('pay-student-select').value;
-        const amt = Number(document.getElementById('pay-amount').value);
-        const type = document.getElementById('pay-type-select').value;
-        const method = document.getElementById('pay-method').value;
-
-        const uDoc = await getDoc(doc(db, "users", id));
-        const newBal = (uDoc.data().balance || 0) + amt; // Adding to "Paid" balance
-        
-        await updateDoc(doc(db, "users", id), { balance: newBal });
-        
-        // Show Receipt
-        document.getElementById('receipt-area').classList.remove('hidden');
-        document.getElementById('receipt-content').innerHTML = `
-            <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
-            <p><strong>Student:</strong> ${uDoc.data().name}</p>
-            <p><strong>Payment For:</strong> ${type}</p>
-            <p><strong>Amount:</strong> ₱${amt.toLocaleString()}</p>
-            <p><strong>Type:</strong> ${method}</p>
-            <hr>
-            <p><em>Thank you for your payment!</em></p>
-        `;
-        alert("Payment Recorded!");
-    };
-
-    // --- STUDENT VIEW LOGIC ---
-    function initStudent(user) {
-        onSnapshot(doc(db, "users", user.uid), (d) => {
-            if(d.exists()){
-                const data = d.data();
-                document.getElementById('stat-balance').innerText = "₱" + (data.balance || 0).toLocaleString();
-                if(data.scheduleUrl) {
-                    document.getElementById('display-schedule').innerHTML = `<img src="${data.scheduleUrl}" style="width:100%; border-radius:8px;">`;
-                }
-            }
-        });
-        // Academic updates
-        onSnapshot(query(collection(db, "updates"), where("studentEmail", "==", user.email)), (snap) => {
-            document.getElementById('lesson-list').innerHTML = snap.docs.map(d => `
-                <div class="card" style="border-left: 4px solid var(--info)">
-                    <strong>${d.data().title}</strong><br><small>${d.data().date}</small>
-                    <p>${d.data().content}</p>
+        // Load Global Payment Logs
+        onSnapshot(query(collection(db, "payments"), orderBy("timestamp", "desc")), (snap) => {
+            const cont = document.getElementById('finance-log-container');
+            cont.innerHTML = snap.docs.map(d => `
+                <div style="font-size:12px; border-bottom:1px solid #eee; padding:5px;">
+                    <strong>${d.data().studentEmail}</strong> - ₱${d.data().amount} <br>
+                    <small>${d.data().description} (${d.data().date})</small>
                 </div>
             `).join('');
         });
     }
 
-    // --- ADMIN & MISC ---
-    function initAdmin() {
-        onSnapshot(collection(db, "users"), (snap) => {
-            document.getElementById('user-list-admin').innerHTML = snap.docs.map(uDoc => {
-                const u = uDoc.data();
-                return `
-                <div class="user-row card flex-row">
-                    <div style="flex:1"><strong>${u.name}</strong><br><small>${u.email}</small></div>
-                    <div><span class="role-tag" style="background:var(--accent)">${u.role}</span></div>
-                    <select onchange="window.changeRole('${uDoc.id}', this.value)" style="width:120px">
-                        <option value="">Change...</option>
-                        <option value="registrar">Registrar</option>
-                        <option value="finance">Finance</option>
-                        <option value="teacher">Teacher</option>
-                        <option value="student">Student</option>
-                    </select>
-                </div>`;
-            }).join('');
-        });
-    }
-
-    window.changeRole = async (id, role) => {
-        if(role) { await updateDoc(doc(db, "users", id), { role }); alert("Role Updated!"); }
+    document.getElementById('pay-btn').onclick = async () => {
+        const payData = {
+            studentEmail: document.getElementById('pay-student-select').value,
+            amount: document.getElementById('pay-amount').value,
+            description: document.getElementById('pay-desc').value,
+            type: document.getElementById('pay-type-select').value,
+            date: new Date().toLocaleDateString(),
+            timestamp: new Date()
+        };
+        await addDoc(collection(db, "payments"), payData);
+        alert("Payment Recorded & Syncing to Student Dashboard!");
     };
 
-    function listenToSchoolName() {
-        onSnapshot(doc(db, "settings", "branding"), (s) => {
-            if(s.exists()) document.getElementById('display-school-name').innerText = s.data().schoolName;
+    window.exportToExcel = async () => {
+        const querySnapshot = await getDocs(collection(db, "payments"));
+        const data = querySnapshot.docs.map(doc => doc.data());
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Payments");
+        XLSX.writeFile(workbook, "Ark_Portal_Payments.xlsx");
+    };
+
+    // --- STUDENT LOGIC ---
+    function initStudent(user) {
+        onSnapshot(query(collection(db, "payments"), where("studentEmail", "==", user.email)), (snap) => {
+            const cont = document.getElementById('student-receipt-list');
+            if(snap.empty) { cont.innerHTML = "No payments yet."; return; }
+            cont.innerHTML = snap.docs.map(d => `
+                <div class="receipt-card">
+                    <strong>${d.data().description}</strong><br>
+                    <small>Type: ${d.data().type} | Date: ${d.data().date}</small>
+                    <h3 style="margin:5px 0; color:#27ae60;">₱${Number(d.data().amount).toLocaleString()}</h3>
+                </div>
+            `).join('');
         });
     }
-
-    document.getElementById('save-settings').onclick = async () => {
-        const val = document.getElementById('school-name-input').value;
-        await setDoc(doc(db, "settings", "branding"), { schoolName: val }, { merge: true });
-    };
 
     document.getElementById('login-btn').onclick = () => signInWithPopup(auth, provider);
     document.getElementById('logout-btn').onclick = () => signOut(auth).then(() => location.reload());
