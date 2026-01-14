@@ -43,6 +43,9 @@
         .action-btns button { padding: 5px 10px; font-size: 12px; }
 
         #stu-schedule-img { max-width: 100%; border-radius: 8px; border: 2px solid var(--border); }
+        
+        .breakdown-item { display: flex; gap: 10px; align-items: center; margin-bottom: 5px; }
+        .fee-tag { background: #f1f2f6; padding: 2px 8px; border-radius: 4px; font-size: 11px; color: #666; margin-right: 5px; }
     </style>
 </head>
 <body>
@@ -79,7 +82,7 @@
 
     <div id="finance-menu" class="sub-nav hidden">
         <button onclick="showSubPage('finance', 'collections-page', this)" class="active">Collect Payment</button>
-        <button onclick="showSubPage('finance', 'assessment-page', this)">Assign Assessment</button>
+        <button onclick="showSubPage('finance', 'assessment-page', this)">Fee Assessments</button>
         <button onclick="showSubPage('finance', 'history-page', this)">Payment History</button>
     </div>
 
@@ -148,7 +151,7 @@
                 <h3>Pending Requests</h3>
                 <div id="admin-request-list"></div>
             </div>
-        </div >
+        </div>
 
         <div id="schedule-page" class="sub-view hidden">
             <div class="card">
@@ -183,6 +186,9 @@
                         <select id="pay-category">
                             <option value="Tuition Fee">Tuition Fee</option>
                             <option value="Misc. Fee">Misc. Fee</option>
+                            <option value="Lab Fee">Lab Fee</option>
+                            <option value="Uniform">Uniform</option>
+                            <option value="Others">Others</option>
                         </select>
                         <button id="pay-btn" class="btn-main" style="width:100%">Record Payment</button>
                     </div>
@@ -192,19 +198,21 @@
 
         <div id="assessment-page" class="sub-view hidden">
             <div class="card">
-                <h3>Assign Student Assessment (School Fees)</h3>
-                <p><small>Set the total required payment for each student individually.</small></p>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Student Name</th>
-                            <th>Current Assessment</th>
-                            <th>New Amount</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="finance-assessment-list"></tbody>
-                </table>
+                <h3>Detailed Fee Assessment</h3>
+                <p><small>Update specific fee components for each student. The total will update automatically.</small></p>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Current Total</th>
+                                <th>Update Breakdown (Tuition | Misc | Lab | Other)</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="finance-assessment-list"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -233,9 +241,15 @@
     <section id="student-view" class="view hidden">
         <div id="stu-profile-page" class="sub-view">
             <div class="grid">
-                <div class="card"><h3>Profile</h3><div id="stu-info-display"></div></div>
+                <div class="card">
+                    <h3>Profile</h3>
+                    <div id="stu-info-display"></div>
+                </div>
                 <div class="card" style="background:var(--primary); color:white; text-align:center;">
-                    <small>Outstanding Balance</small><h1 id="stu-balance">₱0.00</h1>
+                    <small>Outstanding Balance</small>
+                    <h1 id="stu-balance">₱0.00</h1>
+                    <hr style="opacity: 0.2">
+                    <div id="stu-breakdown-display" style="text-align: left; font-size: 13px; margin-top: 10px;"></div>
                 </div>
             </div>
         </div>
@@ -345,7 +359,7 @@
         btn.classList.add('active');
     };
 
-    // --- ENHANCED ADMIN ---
+    // --- ADMIN ---
     function initAdmin() {
         onSnapshot(collection(db, "users"), (snap) => {
             const container = document.getElementById('user-list-admin');
@@ -449,10 +463,10 @@
             email: email,
             role: 'student',
             totalAssessment: 0,
+            feeBreakdown: { tuition: 0, misc: 0, lab: 0, other: 0 },
             voucher: document.getElementById('reg-voucher').value
         });
         alert("Enrolled!");
-        document.querySelectorAll('#enrollment-page input').forEach(i => i.value = "");
     };
 
     // --- TEACHER ---
@@ -474,20 +488,29 @@
         alert("Grade Saved!");
     };
 
-    // --- ENHANCED FINANCE ---
+    // --- FINANCE ENHANCED ---
     function initFinance() {
         onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
             const students = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             document.getElementById('pay-student-select').innerHTML = students.map(s => `<option value="${s.email}">${s.name}</option>`).join('');
             
-            document.getElementById('finance-assessment-list').innerHTML = students.map(s => `
+            document.getElementById('finance-assessment-list').innerHTML = students.map(s => {
+                const fb = s.feeBreakdown || { tuition: 0, misc: 0, lab: 0, other: 0 };
+                return `
                 <tr>
-                    <td>${s.name}</td>
-                    <td>₱${(s.totalAssessment || 0).toLocaleString()}</td>
-                    <td><input type="number" id="new-assess-${s.id}" placeholder="New Amount" style="width:120px; margin:0;"></td>
-                    <td><button onclick="updateIndividualAssessment('${s.id}')" class="btn-main">Set</button></td>
+                    <td><strong>${s.name}</strong><br><small>${s.email}</small></td>
+                    <td id="total-val-${s.id}">₱${(s.totalAssessment || 0).toLocaleString()}</td>
+                    <td>
+                        <div class="grid" style="grid-template-columns: repeat(2, 1fr); gap: 5px;">
+                            <input type="number" id="tuition-${s.id}" value="${fb.tuition}" placeholder="Tuition" title="Tuition">
+                            <input type="number" id="misc-${s.id}" value="${fb.misc}" placeholder="Misc" title="Misc">
+                            <input type="number" id="lab-${s.id}" value="${fb.lab}" placeholder="Lab" title="Lab">
+                            <input type="number" id="other-${s.id}" value="${fb.other}" placeholder="Other" title="Other">
+                        </div>
+                    </td>
+                    <td><button onclick="updateDetailedAssessment('${s.id}')" class="btn-main">Update Breakdown</button></td>
                 </tr>
-            `).join('');
+            `}).join('');
         });
 
         onSnapshot(query(collection(db, "payments"), orderBy("timestamp", "desc")), (snap) => {
@@ -508,6 +531,21 @@
         });
     }
 
+    window.updateDetailedAssessment = async (userId) => {
+        const t = Number(document.getElementById(`tuition-${userId}`).value) || 0;
+        const m = Number(document.getElementById(`misc-${userId}`).value) || 0;
+        const l = Number(document.getElementById(`lab-${userId}`).value) || 0;
+        const o = Number(document.getElementById(`other-${userId}`).value) || 0;
+        
+        const total = t + m + l + o;
+
+        await updateDoc(doc(db, "users", userId), { 
+            totalAssessment: total,
+            feeBreakdown: { tuition: t, misc: m, lab: l, other: o }
+        });
+        alert("Detailed Assessment Updated!");
+    };
+
     window.filterFinanceHistory = () => {
         const q = document.getElementById('finance-history-search').value.toLowerCase();
         document.querySelectorAll('#finance-log tr').forEach(row => {
@@ -516,7 +554,7 @@
     };
 
     window.deletePayment = async (id) => {
-        if(confirm("Confirm Delete: This payment will be removed and the student's balance will be updated.")) {
+        if(confirm("Confirm Delete? Student balance will update.")) {
             await deleteDoc(doc(db, "payments", id));
             alert("Payment deleted.");
         }
@@ -528,13 +566,6 @@
             await updateDoc(doc(db, "payments", id), { amount: Number(newAmt) });
             alert("Payment updated.");
         }
-    };
-
-    window.updateIndividualAssessment = async (userId) => {
-        const val = document.getElementById(`new-assess-${userId}`).value;
-        if(!val) return alert("Enter an amount");
-        await updateDoc(doc(db, "users", userId), { totalAssessment: Number(val) });
-        alert("Assessment updated for student.");
     };
 
     document.getElementById('pay-btn').onclick = async () => {
@@ -558,6 +589,18 @@
             const d = s.data();
             document.getElementById('stu-info-display').innerHTML = `<p><strong>${d.name}</strong><br>${d.email}<br>LRN: ${d.lrn || 'N/A'}</p>`;
             
+            // Fee Breakdown Logic
+            const fb = d.feeBreakdown || { tuition: 0, misc: 0, lab: 0, other: 0 };
+            document.getElementById('stu-breakdown-display').innerHTML = `
+                <div style="font-weight:bold; margin-bottom:5px;">Fee Breakdown:</div>
+                <div style="display:flex; justify-content:space-between;"><span>Tuition:</span> <span>₱${fb.tuition.toLocaleString()}</span></div>
+                <div style="display:flex; justify-content:space-between;"><span>Misc:</span> <span>₱${fb.misc.toLocaleString()}</span></div>
+                <div style="display:flex; justify-content:space-between;"><span>Lab:</span> <span>₱${fb.lab.toLocaleString()}</span></div>
+                <div style="display:flex; justify-content:space-between;"><span>Other:</span> <span>₱${fb.other.toLocaleString()}</span></div>
+                <hr style="opacity:0.2">
+                <div style="display:flex; justify-content:space-between; font-weight:bold;"><span>Total Required:</span> <span>₱${(d.totalAssessment || 0).toLocaleString()}</span></div>
+            `;
+
             // Calculate Balance
             const pSnap = await getDocs(query(collection(db, "payments"), where("studentEmail", "==", user.email)));
             let paid = 0; 
@@ -596,14 +639,14 @@
     document.getElementById('login-btn').onclick = () => signInWithPopup(auth, provider);
     document.getElementById('logout-btn').onclick = () => signOut(auth).then(() => location.reload());
     
-    // Global Access for Window functions
+    // Global Access
     window.deleteUserAccount = deleteUserAccount;
     window.modifyUserName = modifyUserName;
     window.updateUserRole = updateUserRole;
     window.assignSubject = assignSubject;
-    window.updateIndividualAssessment = updateIndividualAssessment;
     window.deletePayment = deletePayment;
     window.editPayment = editPayment;
+    window.updateDetailedAssessment = updateDetailedAssessment;
 
 </script>
 </body>
