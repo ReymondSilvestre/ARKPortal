@@ -35,16 +35,16 @@
         table th, table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
         table th { background: #f8fafb; color: var(--primary); }
 
-        .checklist-item { display: flex; align-items: center; gap: 10px; background: #f9f9f9; padding: 8px; border-radius: 5px; margin-bottom: 5px; }
-        .checklist-item input { width: auto; margin: 0; }
-        
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .badge-success { background: #d1fae5; color: #065f46; }
+
         #stu-schedule-img { max-width: 100%; border-radius: 8px; border: 2px solid var(--border); }
     </style>
 </head>
 <body>
 
 <nav>
-    <h2 id="display-school-name" style="margin:0">Ark Portal</h2>
+    <h2 style="margin:0">Ark Portal</h2>
     <div id="auth-ui">
         <button id="login-btn" class="btn-main">Secure Login</button>
         <div id="user-info" class="hidden">
@@ -54,11 +54,20 @@
     </div>
 </nav>
 
+<div id="admin-menu" class="sub-nav hidden">
+    <button onclick="showSubPage('admin', 'admin-users-page', this)" class="active">User Management</button>
+    <button onclick="showSubPage('admin', 'admin-logs-page', this)">System Logs</button>
+</div>
+
 <div id="registrar-menu" class="sub-nav hidden">
     <button onclick="showSubPage('registrar', 'enrollment-page', this)" class="active">Enrollment</button>
-    <button onclick="showSubPage('registrar', 'masterlist-page', this)">Masterlist</button>
+    <button onclick="showSubPage('registrar', 'masterlist-page', this)">Masterlist & Released</button>
     <button onclick="showSubPage('registrar', 'requests-page', this)">Document Requests</button>
     <button onclick="showSubPage('registrar', 'schedule-page', this)">Post Schedule</button>
+</div>
+
+<div id="teacher-menu" class="sub-nav hidden">
+    <button onclick="showSubPage('teacher', 'grading-page', this)" class="active">Grading Portal</button>
 </div>
 
 <div id="finance-menu" class="sub-nav hidden">
@@ -81,19 +90,24 @@
     </div>
 
     <section id="admin-view" class="view hidden">
-        <div class="card">
-            <h3>User Management</h3>
-            <input type="text" id="admin-search" placeholder="Search users..." onkeyup="filterAdminUsers()">
-            <div id="user-list-admin" style="margin-top:15px;"></div>
+        <div id="admin-users-page" class="sub-view">
+            <div class="card">
+                <h3>User Role & Subject Assignment</h3>
+                <input type="text" id="admin-search" placeholder="Search users by name or email..." onkeyup="filterAdminUsers()">
+                <div id="user-list-admin" style="margin-top:15px;"></div>
+            </div>
+        </div>
+        <div id="admin-logs-page" class="sub-view hidden">
+            <div class="card"><h3>System Activity</h3><p>Log tracking coming soon...</p></div>
         </div>
     </section>
 
     <section id="registrar-view" class="view hidden">
         <div id="enrollment-page" class="sub-view">
             <div class="card">
-                <h3>Detailed Student Enrollment</h3>
+                <h3>Student Enrollment</h3>
                 <div class="grid">
-                    <input type="text" id="reg-lrn" placeholder="Learner Reference Number (LRN)">
+                    <input type="text" id="reg-lrn" placeholder="LRN">
                     <select id="reg-voucher">
                         <option value="NON-VOUCHER">Non-Voucher</option>
                         <option value="PUB">Public (PUB)</option>
@@ -102,21 +116,7 @@
                     </select>
                     <input type="text" id="reg-lname" placeholder="Last Name">
                     <input type="text" id="reg-fname" placeholder="First Name">
-                    <input type="text" id="reg-mname" placeholder="Middle Name">
-                    <input type="number" id="reg-age" placeholder="Age">
-                    <input type="date" id="reg-bdate">
                     <input type="email" id="reg-email" placeholder="Google Email">
-                    <input type="text" id="reg-contact" placeholder="Contact Number">
-                    <input type="text" id="reg-guardian" placeholder="Guardian Name">
-                </div>
-                <textarea id="reg-address" placeholder="Full Address"></textarea>
-                
-                <h4>Requirements Checklist</h4>
-                <div id="requirements-list" class="grid" style="grid-template-columns: 1fr 1fr;">
-                    <div class="checklist-item"><input type="checkbox" class="req-check" value="PSA Birth Certificate"> PSA Birth Certificate</div>
-                    <div class="checklist-item"><input type="checkbox" class="req-check" value="Form 138 (Report Card)"> Form 138 (Report Card)</div>
-                    <div class="checklist-item"><input type="checkbox" class="req-check" value="Good Moral Certificate"> Good Moral Certificate</div>
-                    <div class="checklist-item"><input type="checkbox" class="req-check" value="2x2 Picture"> 2x2 Picture</div>
                 </div>
                 <button id="enroll-btn" class="btn-main" style="width:100%; margin-top:20px;">REGISTER STUDENT</button>
             </div>
@@ -126,24 +126,44 @@
             <div class="card">
                 <h3>Student Masterlist</h3>
                 <table>
-                    <thead><tr><th>LRN</th><th>Name</th><th>Email</th><th>Voucher</th><th>Status</th></tr></thead>
+                    <thead><tr><th>LRN</th><th>Name</th><th>Email</th><th>Status</th></tr></thead>
                     <tbody id="masterlist-body"></tbody>
+                </table>
+            </div>
+            <div class="card">
+                <h3>Released Documents Log</h3>
+                <table>
+                    <thead><tr><th>Student</th><th>Document Type</th><th>Date Released</th></tr></thead>
+                    <tbody id="released-docs-body"></tbody>
                 </table>
             </div>
         </div>
 
         <div id="requests-page" class="sub-view hidden">
             <div class="card">
-                <h3>Incoming Document Requests</h3>
+                <h3>Pending Requests</h3>
                 <div id="admin-request-list"></div>
             </div>
         </div>
 
         <div id="schedule-page" class="sub-view hidden">
             <div class="card">
-                <h3>Post Schedule Image</h3>
+                <h3>Broadcast Schedule</h3>
                 <input type="text" id="sched-img-input" placeholder="Paste Image URL here">
-                <button id="update-sched-btn" class="btn-main">Broadcast Schedule</button>
+                <button id="update-sched-btn" class="btn-main">Update Schedule</button>
+            </div>
+        </div>
+    </section>
+
+    <section id="teacher-view" class="view hidden">
+        <div id="grading-page" class="sub-view">
+            <div class="card">
+                <h3>Subject: <span id="assigned-subject-title" style="color:var(--accent)"></span></h3>
+                <div class="grid">
+                    <select id="grade-student-select"></select>
+                    <input type="number" id="grade-value" placeholder="Enter Grade">
+                    <button id="save-grade-btn" class="btn-main">Post Grade</button>
+                </div>
             </div>
         </div>
     </section>
@@ -155,15 +175,15 @@
                 <div class="grid">
                     <div>
                         <select id="pay-student-select"></select>
+                        <input type="number" id="pay-amount" placeholder="Amount">
                         <select id="pay-category">
                             <option value="Tuition Fee">Tuition Fee</option>
                             <option value="Misc. Fee">Misc. Fee</option>
                         </select>
-                        <input type="number" id="pay-amount" placeholder="Amount">
                         <button id="pay-btn" class="btn-main" style="width:100%">Record Payment</button>
                     </div>
-                    <div class="card" style="background:#2c3e50; color:white;">
-                        <h4>Set Total Assessment</h4>
+                    <div class="card" style="background:var(--primary); color:white;">
+                        <h4>Set Assessment</h4>
                         <input type="number" id="pay-total-tuition" placeholder="Total School Fee">
                         <button onclick="setTotalAssessment()" class="btn-outline" style="color:white; border-color:white; width:100%">Update Total</button>
                     </div>
@@ -172,74 +192,44 @@
         </div>
         <div id="history-page" class="sub-view hidden">
             <div class="card">
-                <button onclick="exportPayments()" class="btn-main">Download Report</button>
                 <table id="finance-log-table">
-                    <thead><tr><th>Date</th><th>Student</th><th>Category</th><th>Amount</th></tr></thead>
+                    <thead><tr><th>Date</th><th>Student</th><th>Amount</th></tr></thead>
                     <tbody id="finance-log"></tbody>
                 </table>
             </div>
         </div>
     </section>
 
-    <section id="teacher-view" class="view hidden">
-        <div class="card">
-            <h3>Grades: <span id="assigned-subject-title"></span></h3>
-            <select id="grade-student-select"></select>
-            <input type="number" id="grade-value" placeholder="Grade">
-            <button id="save-grade-btn" class="btn-main">Post Grade</button>
-        </div>
-    </section>
-
     <section id="student-view" class="view hidden">
         <div id="stu-profile-page" class="sub-view">
             <div class="grid">
-                <div class="card">
-                    <h3>Personal Information</h3>
-                    <div id="stu-info-display"></div>
-                </div>
+                <div class="card"><h3>Profile</h3><div id="stu-info-display"></div></div>
                 <div class="card" style="background:var(--primary); color:white; text-align:center;">
-                    <small>Outstanding Balance</small>
-                    <h1 id="stu-balance">₱0.00</h1>
+                    <small>Balance</small><h1 id="stu-balance">₱0.00</h1>
                 </div>
             </div>
         </div>
-
         <div id="stu-grades-page" class="sub-view hidden">
             <div class="card">
-                <h3>Report Card</h3>
-                <table>
-                    <thead><tr><th>Subject</th><th>Grade</th></tr></thead>
-                    <tbody id="stu-grade-body"></tbody>
-                </table>
+                <h3>Grades</h3>
+                <table><thead><tr><th>Subject</th><th>Grade</th></tr></thead><tbody id="stu-grade-body"></tbody></table>
             </div>
         </div>
-
         <div id="stu-schedule-page" class="sub-view hidden">
-            <div class="card">
-                <h3>Class Schedule</h3>
-                <img id="stu-schedule-img" src="" alt="Schedule not available">
-            </div>
+            <div class="card"><h3>Class Schedule</h3><img id="stu-schedule-img" src="" alt="No schedule posted"></div>
         </div>
-
         <div id="stu-payments-page" class="sub-view hidden">
-            <div class="card">
-                <h3>Payment History</h3>
-                <div id="stu-receipt-list"></div>
-            </div>
+            <div class="card"><h3>Payments</h3><div id="stu-receipt-list"></div></div>
         </div>
-
         <div id="stu-requests-page" class="sub-view hidden">
             <div class="card">
                 <h3>Request Documents</h3>
                 <select id="stu-req-type">
-                    <option value="Good Moral">Good Moral Certificate</option>
+                    <option value="Good Moral">Good Moral</option>
                     <option value="Form 137">Form 137</option>
-                    <option value="Certification of Enrollment">Certification of Enrollment</option>
                 </select>
-                <button id="stu-req-btn" class="btn-main">Send Request</button>
-                <hr>
-                <h4>My Requests</h4>
-                <div id="stu-my-requests"></div>
+                <button id="stu-req-btn" class="btn-main">Submit Request</button>
+                <div id="stu-my-requests" style="margin-top:20px;"></div>
             </div>
         </div>
     </section>
@@ -268,16 +258,13 @@
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            // First check by UID (Standard Login)
             let userRef = doc(db, "users", user.uid);
             let snap = await getDoc(userRef);
             
-            // If not found by UID, check if they were pre-enrolled via Email
             if (!snap.exists()) {
                 const q = query(collection(db, "users"), where("email", "==", user.email));
                 const querySnap = await getDocs(q);
                 if (!querySnap.empty) {
-                    // Migrate data from Email-ID doc to UID-ID doc for security
                     const data = querySnap.docs[0].data();
                     await setDoc(userRef, data);
                     await deleteDoc(doc(db, "users", querySnap.docs[0].id));
@@ -285,7 +272,6 @@
                 }
             }
 
-            // Forced Admin check
             if (user.email === "reymonde.silvestre@gmail.com") {
                 await setDoc(userRef, { name: user.displayName, email: user.email, role: 'admin' }, { merge: true });
                 snap = await getDoc(userRef);
@@ -340,24 +326,31 @@
                 <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:10px 15px;">
                     <div><strong>${u.name}</strong><br><small>${u.email}</small></div>
                     <div style="display:flex; gap:10px;">
-                        <input type="text" placeholder="Subject" id="sub-${d.id}" value="${u.subject || ''}" style="width:100px; margin:0">
-                        <select onchange="updateUserRole('${d.id}', this.value, document.getElementById('sub-${d.id}').value)" style="width:120px; margin:0">
+                        ${u.role === 'teacher' ? `<input type="text" placeholder="Subject" id="sub-${d.id}" value="${u.subject || ''}" style="width:120px; margin:0">` : ''}
+                        <select onchange="updateUserRole('${d.id}', this.value, '${d.id}')" style="width:120px; margin:0">
                             <option value="">Set Role...</option>
                             <option value="registrar" ${u.role === 'registrar' ? 'selected' : ''}>Registrar</option>
                             <option value="teacher" ${u.role === 'teacher' ? 'selected' : ''}>Teacher</option>
                             <option value="finance" ${u.role === 'finance' ? 'selected' : ''}>Finance</option>
                             <option value="student" ${u.role === 'student' ? 'selected' : ''}>Student</option>
                         </select>
+                        ${u.role === 'teacher' ? `<button onclick="assignSubject('${d.id}')" class="btn-main" style="padding:5px 10px;">Save Subj</button>` : ''}
                     </div>
                 </div>`;
             }).join('');
         });
     }
 
-    window.updateUserRole = async (id, role, subject) => {
+    window.updateUserRole = async (id, role) => {
         if(!role) return;
-        await updateDoc(doc(db, "users", id), { role, subject });
-        alert("User Updated!");
+        await updateDoc(doc(db, "users", id), { role });
+        alert("Role Updated!");
+    };
+
+    window.assignSubject = async (id) => {
+        const sub = document.getElementById(`sub-${id}`).value;
+        await updateDoc(doc(db, "users", id), { subject: sub });
+        alert("Subject Assigned!");
     };
 
     window.filterAdminUsers = () => {
@@ -371,102 +364,75 @@
     function initRegistrar() {
         onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
             document.getElementById('masterlist-body').innerHTML = snap.docs.map(d => `
-                <tr>
-                    <td>${d.data().lrn || '-'}</td>
-                    <td>${d.data().name}</td>
-                    <td>${d.data().email}</td>
-                    <td>${d.data().voucher || 'NON'}</td>
-                    <td>Active</td>
-                </tr>`).join('');
+                <tr><td>${d.data().lrn || '-'}</td><td>${d.data().name}</td><td>${d.data().email}</td><td>Active</td></tr>`).join('');
         });
 
         onSnapshot(collection(db, "requests"), (snap) => {
             document.getElementById('admin-request-list').innerHTML = snap.docs.map(d => `
                 <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
                     <div><strong>${d.data().studentName}</strong>: ${d.data().type}</div>
-                    <button onclick="completeRequest('${d.id}')" class="btn-outline">Done</button>
+                    <button onclick="releaseDocument('${d.id}')" class="btn-main">Mark as Released</button>
                 </div>`).join('');
+        });
+
+        onSnapshot(query(collection(db, "released_docs"), orderBy("timestamp", "desc")), (snap) => {
+            document.getElementById('released-docs-body').innerHTML = snap.docs.map(d => `
+                <tr><td>${d.data().studentName}</td><td>${d.data().type}</td><td>${d.data().date}</td></tr>`).join('');
         });
     }
 
-    window.completeRequest = async (id) => {
-        await deleteDoc(doc(db, "requests", id));
-        alert("Request Cleared!");
+    window.releaseDocument = async (id) => {
+        const snap = await getDoc(doc(db, "requests", id));
+        if(snap.exists()){
+            const data = snap.data();
+            await addDoc(collection(db, "released_docs"), {
+                ...data,
+                date: new Date().toLocaleDateString(),
+                timestamp: new Date()
+            });
+            await deleteDoc(doc(db, "requests", id));
+            alert("Document released and logged!");
+        }
     };
 
     document.getElementById('enroll-btn').onclick = async () => {
         const email = document.getElementById('reg-email').value;
-        if(!email) return alert("Email Required");
-        const checks = Array.from(document.querySelectorAll('.req-check:checked')).map(c => c.value);
-        
-        // Save using Email as ID initially (will be migrated to UID on first login)
         await setDoc(doc(db, "users", email), {
             lrn: document.getElementById('reg-lrn').value,
-            voucher: document.getElementById('reg-voucher').value,
-            name: `${document.getElementById('reg-lname').value}, ${document.getElementById('reg-fname').value} ${document.getElementById('reg-mname').value}`,
-            age: document.getElementById('reg-age').value,
-            bdate: document.getElementById('reg-bdate').value,
+            name: `${document.getElementById('reg-lname').value}, ${document.getElementById('reg-fname').value}`,
             email: email,
-            contact: document.getElementById('reg-contact').value,
-            guardian: document.getElementById('reg-guardian').value,
-            address: document.getElementById('reg-address').value,
-            requirements: checks,
             role: 'student',
             totalAssessment: 0
         });
-        alert("Student Enrolled!");
+        alert("Enrolled!");
     };
 
-    // --- STUDENT ---
-    async function initStudent(user) {
-        onSnapshot(doc(db, "users", user.uid), async (s) => {
-            const d = s.data();
-            if(!d) return;
-            document.getElementById('stu-info-display').innerHTML = `
-                <p><strong>LRN:</strong> ${d.lrn || 'N/A'}</p>
-                <p><strong>Name:</strong> ${d.name}</p>
-                <p><strong>Email:</strong> ${d.email}</p>
-                <p><strong>Voucher:</strong> ${d.voucher || 'N/A'}</p>
-            `;
-            const paySnap = await getDocs(query(collection(db, "payments"), where("studentEmail", "==", user.email)));
-            let paid = 0; paySnap.forEach(p => paid += p.data().amount);
-            document.getElementById('stu-balance').innerText = `₱${((d.totalAssessment || 0) - paid).toLocaleString()}`;
-        });
-
-        onSnapshot(doc(db, "settings", "schedule"), (s) => {
-            if(s.exists()) document.getElementById('stu-schedule-img').src = s.data().imgUrl;
-        });
-
-        onSnapshot(query(collection(db, "grades"), where("studentEmail", "==", user.email)), (snap) => {
-            document.getElementById('stu-grade-body').innerHTML = snap.docs.map(d => `<tr><td>${d.data().subject}</td><td><strong>${d.data().grade}</strong></td></tr>`).join('');
-        });
-
-        onSnapshot(query(collection(db, "payments"), where("studentEmail", "==", user.email)), (snap) => {
-            document.getElementById('stu-receipt-list').innerHTML = snap.docs.map(d => `<div class="card" style="border-left:5px solid var(--accent)">${d.data().category}: ₱${d.data().amount} (${d.data().date})</div>`).join('');
-        });
-
-        onSnapshot(query(collection(db, "requests"), where("studentEmail", "==", user.email)), (snap) => {
-            document.getElementById('stu-my-requests').innerHTML = snap.docs.map(d => `<div class="checklist-item">Pending: ${d.data().type}</div>`).join('');
+    // --- TEACHER ---
+    function initTeacher(user) {
+        document.getElementById('assigned-subject-title').innerText = user.subject || "Not Assigned";
+        onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
+            document.getElementById('grade-student-select').innerHTML = snap.docs.map(d => `<option value="${d.data().email}">${d.data().name}</option>`).join('');
         });
     }
 
-    document.getElementById('stu-req-btn').onclick = async () => {
-        await addDoc(collection(db, "requests"), {
-            studentEmail: currentUser.email,
-            studentName: currentUser.name,
-            type: document.getElementById('stu-req-type').value,
+    document.getElementById('save-grade-btn').onclick = async () => {
+        if(!currentUser.subject) return alert("You have no assigned subject!");
+        await addDoc(collection(db, "grades"), {
+            studentEmail: document.getElementById('grade-student-select').value,
+            subject: currentUser.subject,
+            grade: document.getElementById('grade-value').value,
             timestamp: new Date()
         });
-        alert("Request Submitted!");
+        alert("Grade Saved!");
     };
 
-    // --- FINANCE / TEACHER ---
+    // --- FINANCE ---
     function initFinance() {
         onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
             document.getElementById('pay-student-select').innerHTML = snap.docs.map(d => `<option value="${d.data().email}">${d.data().name}</option>`).join('');
         });
         onSnapshot(query(collection(db, "payments"), orderBy("timestamp", "desc")), (snap) => {
-            document.getElementById('finance-log').innerHTML = snap.docs.map(d => `<tr><td>${d.data().date}</td><td>${d.data().studentEmail}</td><td>${d.data().category}</td><td>₱${d.data().amount}</td></tr>`).join('');
+            document.getElementById('finance-log').innerHTML = snap.docs.map(d => `<tr><td>${d.data().date}</td><td>${d.data().studentEmail}</td><td>₱${d.data().amount}</td></tr>`).join('');
         });
     }
 
@@ -481,29 +447,39 @@
     document.getElementById('pay-btn').onclick = async () => {
         await addDoc(collection(db, "payments"), {
             studentEmail: document.getElementById('pay-student-select').value,
-            category: document.getElementById('pay-category').value,
             amount: Number(document.getElementById('pay-amount').value),
+            category: document.getElementById('pay-category').value,
             date: new Date().toLocaleDateString(),
             timestamp: new Date()
         });
-        alert("Payment Logged!");
+        alert("Payment Recorded!");
     };
 
-    function initTeacher(user) {
-        document.getElementById('assigned-subject-title').innerText = user.subject || "No Subject";
-        onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
-            document.getElementById('grade-student-select').innerHTML = snap.docs.map(d => `<option value="${d.data().email}">${d.data().name}</option>`).join('');
+    // --- STUDENT ---
+    async function initStudent(user) {
+        onSnapshot(doc(db, "users", user.uid), async (s) => {
+            const d = s.data();
+            document.getElementById('stu-info-display').innerHTML = `<p><strong>${d.name}</strong><br>${d.email}</p>`;
+            const pSnap = await getDocs(query(collection(db, "payments"), where("studentEmail", "==", user.email)));
+            let paid = 0; pSnap.forEach(p => paid += p.data().amount);
+            document.getElementById('stu-balance').innerText = `₱${((d.totalAssessment || 0) - paid).toLocaleString()}`;
+        });
+        onSnapshot(query(collection(db, "grades"), where("studentEmail", "==", user.email)), (snap) => {
+            document.getElementById('stu-grade-body').innerHTML = snap.docs.map(d => `<tr><td>${d.data().subject}</td><td>${d.data().grade}</td></tr>`).join('');
+        });
+        onSnapshot(doc(db, "settings", "schedule"), (s) => {
+            if(s.exists()) document.getElementById('stu-schedule-img').src = s.data().imgUrl;
         });
     }
 
-    document.getElementById('save-grade-btn').onclick = async () => {
-        await addDoc(collection(db, "grades"), {
-            studentEmail: document.getElementById('grade-student-select').value,
-            subject: currentUser.subject,
-            grade: document.getElementById('grade-value').value,
+    document.getElementById('stu-req-btn').onclick = async () => {
+        await addDoc(collection(db, "requests"), {
+            studentEmail: currentUser.email,
+            studentName: currentUser.name,
+            type: document.getElementById('stu-req-type').value,
             timestamp: new Date()
         });
-        alert("Grade Posted!");
+        alert("Request Sent!");
     };
 
     document.getElementById('login-btn').onclick = () => signInWithPopup(auth, provider);
