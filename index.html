@@ -14,6 +14,9 @@
         body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: var(--bg); color: #333; }
         
         nav { background: var(--primary); color: white; padding: 0.8rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
+        
+        /* New Role-Specific Nav Styles */
+        .role-nav-container { display: flex; align-items: center; gap: 20px; }
         .sub-nav { background: var(--white); border-bottom: 1px solid var(--border); padding: 10px 2rem; display: flex; gap: 15px; overflow-x: auto; }
         .sub-nav button { background: #eee; color: #555; font-size: 13px; padding: 6px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; flex-shrink: 0; }
         .sub-nav button.active { background: var(--accent); color: white; }
@@ -26,6 +29,8 @@
         button:hover { opacity: 0.9; }
         .btn-main { background: var(--accent); color: white; }
         .btn-outline { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-info { background: var(--info); color: white; }
 
         input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
@@ -35,8 +40,8 @@
         table th, table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
         table th { background: #f8fafb; color: var(--primary); }
 
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
-        .badge-success { background: #d1fae5; color: #065f46; }
+        .action-btns { display: flex; gap: 5px; }
+        .action-btns button { padding: 5px 10px; font-size: 12px; }
 
         #stu-schedule-img { max-width: 100%; border-radius: 8px; border: 2px solid var(--border); }
     </style>
@@ -47,40 +52,44 @@
     <h2 style="margin:0">Ark Portal</h2>
     <div id="auth-ui">
         <button id="login-btn" class="btn-main">Secure Login</button>
-        <div id="user-info" class="hidden">
-            <span id="user-name"></span><span id="user-role" class="role-tag"></span>
-            <button id="logout-btn" style="background:#95a5a6; margin-left:10px;">Logout</button>
+        <div id="user-info" class="hidden role-nav-container">
+            <span id="user-display">
+                <span id="user-name"></span><span id="user-role" class="role-tag"></span>
+            </span>
+            <button id="logout-btn" style="background:#95a5a6;">Logout</button>
         </div>
     </div>
 </nav>
 
-<div id="admin-menu" class="sub-nav hidden">
-    <button onclick="showSubPage('admin', 'admin-users-page', this)" class="active">User Management</button>
-    <button onclick="showSubPage('admin', 'admin-logs-page', this)">System Logs</button>
-</div>
+<div id="nav-menus">
+    <div id="admin-menu" class="sub-nav hidden">
+        <button onclick="showSubPage('admin', 'admin-users-page', this)" class="active">User Management</button>
+        <button onclick="showSubPage('admin', 'admin-logs-page', this)">System Logs</button>
+    </div>
 
-<div id="registrar-menu" class="sub-nav hidden">
-    <button onclick="showSubPage('registrar', 'enrollment-page', this)" class="active">Enrollment</button>
-    <button onclick="showSubPage('registrar', 'masterlist-page', this)">Masterlist & Released</button>
-    <button onclick="showSubPage('registrar', 'requests-page', this)">Document Requests</button>
-    <button onclick="showSubPage('registrar', 'schedule-page', this)">Post Schedule</button>
-</div>
+    <div id="registrar-menu" class="sub-nav hidden">
+        <button onclick="showSubPage('registrar', 'enrollment-page', this)" class="active">Enrollment</button>
+        <button onclick="showSubPage('registrar', 'masterlist-page', this)">Masterlist & CRUD</button>
+        <button onclick="showSubPage('registrar', 'requests-page', this)">Document Requests</button>
+        <button onclick="showSubPage('registrar', 'schedule-page', this)">Post Schedule</button>
+    </div>
 
-<div id="teacher-menu" class="sub-nav hidden">
-    <button onclick="showSubPage('teacher', 'grading-page', this)" class="active">Grading Portal</button>
-</div>
+    <div id="teacher-menu" class="sub-nav hidden">
+        <button onclick="showSubPage('teacher', 'grading-page', this)" class="active">Grading Portal</button>
+    </div>
 
-<div id="finance-menu" class="sub-nav hidden">
-    <button onclick="showSubPage('finance', 'collections-page', this)" class="active">Collect Payment</button>
-    <button onclick="showSubPage('finance', 'history-page', this)">Payment History</button>
-</div>
+    <div id="finance-menu" class="sub-nav hidden">
+        <button onclick="showSubPage('finance', 'collections-page', this)" class="active">Collect Payment</button>
+        <button onclick="showSubPage('finance', 'history-page', this)">Payment History</button>
+    </div>
 
-<div id="student-menu" class="sub-nav hidden">
-    <button onclick="showSubPage('student', 'stu-profile-page', this)" class="active">My Profile</button>
-    <button onclick="showSubPage('student', 'stu-grades-page', this)">Grades</button>
-    <button onclick="showSubPage('student', 'stu-schedule-page', this)">Schedule</button>
-    <button onclick="showSubPage('student', 'stu-payments-page', this)">Payments</button>
-    <button onclick="showSubPage('student', 'stu-requests-page', this)">Request Documents</button>
+    <div id="student-menu" class="sub-nav hidden">
+        <button onclick="showSubPage('student', 'stu-profile-page', this)" class="active">My Profile</button>
+        <button onclick="showSubPage('student', 'stu-grades-page', this)">Grades</button>
+        <button onclick="showSubPage('student', 'stu-schedule-page', this)">Schedule</button>
+        <button onclick="showSubPage('student', 'stu-payments-page', this)">Payments</button>
+        <button onclick="showSubPage('student', 'stu-requests-page', this)">Request Documents</button>
+    </div>
 </div>
 
 <div class="container">
@@ -92,7 +101,7 @@
     <section id="admin-view" class="view hidden">
         <div id="admin-users-page" class="sub-view">
             <div class="card">
-                <h3>User Role & Subject Assignment</h3>
+                <h3>System User Control</h3>
                 <input type="text" id="admin-search" placeholder="Search users by name or email..." onkeyup="filterAdminUsers()">
                 <div id="user-list-admin" style="margin-top:15px;"></div>
             </div>
@@ -105,7 +114,8 @@
     <section id="registrar-view" class="view hidden">
         <div id="enrollment-page" class="sub-view">
             <div class="card">
-                <h3>Student Enrollment</h3>
+                <h3>New Student Enrollment</h3>
+                <p><small>Note: Creating an account here allows the student to login immediately with their Google Email.</small></p>
                 <div class="grid">
                     <input type="text" id="reg-lrn" placeholder="LRN">
                     <select id="reg-voucher">
@@ -116,19 +126,21 @@
                     </select>
                     <input type="text" id="reg-lname" placeholder="Last Name">
                     <input type="text" id="reg-fname" placeholder="First Name">
-                    <input type="email" id="reg-email" placeholder="Google Email">
+                    <input type="email" id="reg-email" placeholder="Student's Google Email">
                 </div>
-                <button id="enroll-btn" class="btn-main" style="width:100%; margin-top:20px;">REGISTER STUDENT</button>
+                <button id="enroll-btn" class="btn-main" style="width:100%; margin-top:20px;">ENROLL & CREATE ACCOUNT</button>
             </div>
         </div>
 
         <div id="masterlist-page" class="sub-view hidden">
             <div class="card">
-                <h3>Student Masterlist</h3>
-                <table>
-                    <thead><tr><th>LRN</th><th>Name</th><th>Email</th><th>Status</th></tr></thead>
-                    <tbody id="masterlist-body"></tbody>
-                </table>
+                <h3>Student Masterlist (Modify/Delete)</h3>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead><tr><th>LRN</th><th>Name</th><th>Email</th><th>Actions</th></tr></thead>
+                        <tbody id="masterlist-body"></tbody>
+                    </table>
+                </div>
             </div>
             <div class="card">
                 <h3>Released Documents Log</h3>
@@ -261,17 +273,22 @@
             let userRef = doc(db, "users", user.uid);
             let snap = await getDoc(userRef);
             
+            // AUTOMATIC ACCOUNT CLAIMING:
+            // If the Registrar pre-created an account using the Email as the ID
             if (!snap.exists()) {
-                const q = query(collection(db, "users"), where("email", "==", user.email));
-                const querySnap = await getDocs(q);
-                if (!querySnap.empty) {
-                    const data = querySnap.docs[0].data();
-                    await setDoc(userRef, data);
-                    await deleteDoc(doc(db, "users", querySnap.docs[0].id));
+                const preCreatedRef = doc(db, "users", user.email);
+                const preSnap = await getDoc(preCreatedRef);
+                
+                if (preSnap.exists()) {
+                    const data = preSnap.data();
+                    // Transfer data to the actual UID-based document
+                    await setDoc(userRef, { ...data, uid: user.uid });
+                    await deleteDoc(preCreatedRef);
                     snap = await getDoc(userRef);
                 }
             }
 
+            // ADMIN OVERRIDE
             if (user.email === "reymonde.silvestre@gmail.com") {
                 await setDoc(userRef, { name: user.displayName, email: user.email, role: 'admin' }, { merge: true });
                 snap = await getDoc(userRef);
@@ -295,10 +312,15 @@
         document.getElementById('user-info').classList.remove('hidden');
         document.getElementById('user-name').innerText = user.name;
         document.getElementById('user-role').innerText = user.role;
+        
+        // Hide all views and nav menus
         document.querySelectorAll('.view, .sub-nav').forEach(v => v.classList.add('hidden'));
         
+        // Show only the relevant role view
         const mainView = document.getElementById(`${user.role}-view`) || document.getElementById('guest-view');
         mainView.classList.remove('hidden');
+        
+        // Show only the relevant role navigation menu
         const subNav = document.getElementById(`${user.role}-menu`);
         if(subNav) subNav.classList.remove('hidden');
 
@@ -322,19 +344,20 @@
             const container = document.getElementById('user-list-admin');
             container.innerHTML = snap.docs.map(d => {
                 const u = d.data();
+                const docId = d.id;
                 return `
                 <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:10px 15px;">
                     <div><strong>${u.name}</strong><br><small>${u.email}</small></div>
                     <div style="display:flex; gap:10px;">
-                        ${u.role === 'teacher' ? `<input type="text" placeholder="Subject" id="sub-${d.id}" value="${u.subject || ''}" style="width:120px; margin:0">` : ''}
-                        <select onchange="updateUserRole('${d.id}', this.value, '${d.id}')" style="width:120px; margin:0">
+                        ${u.role === 'teacher' ? `<input type="text" placeholder="Subject" id="sub-${docId}" value="${u.subject || ''}" style="width:120px; margin:0">` : ''}
+                        <select onchange="updateUserRole('${docId}', this.value)" style="width:120px; margin:0">
                             <option value="">Set Role...</option>
                             <option value="registrar" ${u.role === 'registrar' ? 'selected' : ''}>Registrar</option>
                             <option value="teacher" ${u.role === 'teacher' ? 'selected' : ''}>Teacher</option>
                             <option value="finance" ${u.role === 'finance' ? 'selected' : ''}>Finance</option>
                             <option value="student" ${u.role === 'student' ? 'selected' : ''}>Student</option>
                         </select>
-                        ${u.role === 'teacher' ? `<button onclick="assignSubject('${d.id}')" class="btn-main" style="padding:5px 10px;">Save Subj</button>` : ''}
+                        ${u.role === 'teacher' ? `<button onclick="assignSubject('${docId}')" class="btn-main" style="padding:5px 10px;">Save Subj</button>` : ''}
                     </div>
                 </div>`;
             }).join('');
@@ -360,13 +383,29 @@
         });
     };
 
-    // --- REGISTRAR ---
+    // --- ENHANCED REGISTRAR ---
     function initRegistrar() {
+        // Masterlist with Modify/Delete
         onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
-            document.getElementById('masterlist-body').innerHTML = snap.docs.map(d => `
-                <tr><td>${d.data().lrn || '-'}</td><td>${d.data().name}</td><td>${d.data().email}</td><td>Active</td></tr>`).join('');
+            document.getElementById('masterlist-body').innerHTML = snap.docs.map(d => {
+                const s = d.data();
+                const id = d.id;
+                return `
+                <tr>
+                    <td>${s.lrn || '-'}</td>
+                    <td>${s.name}</td>
+                    <td>${s.email}</td>
+                    <td>
+                        <div class="action-btns">
+                            <button onclick="modifyStudent('${id}', '${s.name}', '${s.lrn}')" class="btn-info">Edit</button>
+                            <button onclick="deleteStudent('${id}')" class="btn-danger">Delete</button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
         });
 
+        // Request management
         onSnapshot(collection(db, "requests"), (snap) => {
             document.getElementById('admin-request-list').innerHTML = snap.docs.map(d => `
                 <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
@@ -380,6 +419,22 @@
                 <tr><td>${d.data().studentName}</td><td>${d.data().type}</td><td>${d.data().date}</td></tr>`).join('');
         });
     }
+
+    window.modifyStudent = async (id, currentName, currentLrn) => {
+        const newName = prompt("Modify Name:", currentName);
+        const newLrn = prompt("Modify LRN:", currentLrn);
+        if(newName !== null && newLrn !== null) {
+            await updateDoc(doc(db, "users", id), { name: newName, lrn: newLrn });
+            alert("Student Record Updated");
+        }
+    };
+
+    window.deleteStudent = async (id) => {
+        if(confirm("Are you sure you want to delete this student account? Access will be revoked.")) {
+            await deleteDoc(doc(db, "users", id));
+            alert("Account Deleted");
+        }
+    };
 
     window.releaseDocument = async (id) => {
         const snap = await getDoc(doc(db, "requests", id));
@@ -395,16 +450,27 @@
         }
     };
 
+    // Registrar: Pre-register Student Account
     document.getElementById('enroll-btn').onclick = async () => {
         const email = document.getElementById('reg-email').value;
+        const lrn = document.getElementById('reg-lrn').value;
+        const lname = document.getElementById('reg-lname').value;
+        const fname = document.getElementById('reg-fname').value;
+
+        if(!email || !lname || !fname) return alert("Please fill in email and name!");
+
+        // Set account using EMAIL as ID so the Login system can find it later
         await setDoc(doc(db, "users", email), {
-            lrn: document.getElementById('reg-lrn').value,
-            name: `${document.getElementById('reg-lname').value}, ${document.getElementById('reg-fname').value}`,
+            lrn: lrn,
+            name: `${lname}, ${fname}`,
             email: email,
             role: 'student',
-            totalAssessment: 0
+            totalAssessment: 0,
+            voucher: document.getElementById('reg-voucher').value
         });
-        alert("Enrolled!");
+        alert("Student Enrolled & Account Created!");
+        // Clear fields
+        document.querySelectorAll('#enrollment-page input').forEach(i => i.value = "");
     };
 
     // --- TEACHER ---
@@ -458,8 +524,9 @@
     // --- STUDENT ---
     async function initStudent(user) {
         onSnapshot(doc(db, "users", user.uid), async (s) => {
+            if(!s.exists()) return;
             const d = s.data();
-            document.getElementById('stu-info-display').innerHTML = `<p><strong>${d.name}</strong><br>${d.email}</p>`;
+            document.getElementById('stu-info-display').innerHTML = `<p><strong>${d.name}</strong><br>${d.email}<br>LRN: ${d.lrn || 'N/A'}</p>`;
             const pSnap = await getDocs(query(collection(db, "payments"), where("studentEmail", "==", user.email)));
             let paid = 0; pSnap.forEach(p => paid += p.data().amount);
             document.getElementById('stu-balance').innerText = `₱${((d.totalAssessment || 0) - paid).toLocaleString()}`;
