@@ -302,6 +302,31 @@
     let currentStudentId = null;
     let financeStudentsCache = [];
 
+    // Voucher Templates
+    const VOUCHER_TEMPLATES = {
+        'PUB': {
+            'tuition': 0,
+            'misc fee': 900,
+            'intrams fee': 200,
+            'uniform': 0,
+            'p.e uniform': 0
+        },
+        'NON-VOUCHER': {
+            'tuition': 10000,
+            'misc fee': 900,
+            'intrams fee': 200,
+            'uniform': 1000,
+            'p.e uniform': 1000
+        },
+        'ESC': {
+            'tuition': 7000,
+            'misc fee': 900,
+            'intrams fee': 200,
+            'uniform': 1000,
+            'p.e uniform': 1000
+        }
+    };
+
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             let userRef = doc(db, "users", user.uid);
@@ -364,7 +389,7 @@
     };
 
     // ────────────────────────────────────────────────
-    // ADMIN
+    // ADMIN (Unchanged)
     // ────────────────────────────────────────────────
     function initAdmin() {
         onSnapshot(collection(db, "users"), (snap) => {
@@ -432,7 +457,7 @@
     };
 
     // ────────────────────────────────────────────────
-    // REGISTRAR
+    // REGISTRAR (Unchanged)
     // ────────────────────────────────────────────────
     function initRegistrar() {
         onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
@@ -484,14 +509,14 @@
             email: email,
             role: 'student',
             totalAssessment: 0,
-            feeBreakdown: { tuition: 0, misc: 0, lab: 0, other: 0 },
-            voucher: document.getElementById('reg-voucher').value
+            feeBreakdown: {},
+            voucher: document.getElementById('reg-voucher').value // This is critical for Finance
         });
         alert("Enrolled!");
     };
 
     // ────────────────────────────────────────────────
-    // TEACHER
+    // TEACHER (Unchanged)
     // ────────────────────────────────────────────────
     function initTeacher(user) {
         document.getElementById('assigned-subject-title').innerText = user.subject || "Not Assigned";
@@ -520,7 +545,7 @@
     };
 
     // ────────────────────────────────────────────────
-    // FINANCE
+    // FINANCE (Modified for Voucher logic)
     // ────────────────────────────────────────────────
     function refreshFinanceAssessment() {
         const container = document.getElementById('finance-assessment-list');
@@ -535,7 +560,11 @@
 
             return `
             <tr>
-                <td><strong>${s.name || '—'}</strong><br><small>${s.email}</small></td>
+                <td>
+                    <strong>${s.name || '—'}</strong><br>
+                    <small>${s.email}</small><br>
+                    <span class="role-tag" style="background:#2980b9; font-size:10px;">${s.voucher || 'No Voucher'}</span>
+                </td>
                 <td>₱${Number(s.totalAssessment || 0).toLocaleString()}</td>
                 <td>${breakdownDisplay}</td>
                 <td><button onclick="openFeeModal('${s.id}')" class="btn-main">Edit Breakdown</button></td>
@@ -575,13 +604,19 @@
         if (!student) return;
 
         currentStudentId = id;
-        document.getElementById('modal-student-name').innerText = student.name || student.email;
+        document.getElementById('modal-student-name').innerText = (student.name || student.email) + ` (${student.voucher || 'No Voucher'})`;
 
-        const fb = student.feeBreakdown || {};
+        // Logic: Use existing breakdown if it has items, otherwise auto-load from template based on voucher
+        let fb = student.feeBreakdown || {};
+        
+        if (Object.keys(fb).length === 0 && student.voucher && VOUCHER_TEMPLATES[student.voucher]) {
+            fb = VOUCHER_TEMPLATES[student.voucher];
+        }
+
         document.getElementById('fee-list').innerHTML = Object.entries(fb).map(([key, val]) => `
             <div class="breakdown-item">
                 <span class="fee-tag">${key.charAt(0).toUpperCase() + key.slice(1)}</span>
-                <input type="number" value="${Number(val)}" data-name="${key}">
+                <input type="number" value="${Number(val)}" data-name="${key.toLowerCase()}">
                 <button onclick="removeFeeItem(this)" class="btn-danger" style="padding:2px 6px;">X</button>
             </div>
         `).join('') || '<p style="color:#999">No fees yet. Add below.</p>';
@@ -603,7 +638,6 @@
         if (!name || !amount || isNaN(amount)) return alert('Enter valid fee name and amount');
 
         const feeList = document.getElementById('fee-list');
-        // Clear "No fees yet" text if it exists
         if (feeList.querySelector('p')) feeList.innerHTML = '';
 
         const div = document.createElement('div');
@@ -709,7 +743,7 @@
     };
 
     // ────────────────────────────────────────────────
-    // STUDENT
+    // STUDENT (Unchanged)
     // ────────────────────────────────────────────────
     async function initStudent(user) {
         onSnapshot(doc(db, "users", user.uid), async (s) => {
@@ -776,12 +810,11 @@
     };
 
     // ────────────────────────────────────────────────
-    // GLOBAL
+    // GLOBAL (Unchanged)
     // ────────────────────────────────────────────────
     document.getElementById('login-btn').onclick = () => signInWithPopup(auth, provider);
     document.getElementById('logout-btn').onclick = () => signOut(auth).then(() => location.reload());
 
-    // Export to window for HTML onclicks
     window.deleteUserAccount = deleteUserAccount;
     window.modifyUserName = modifyUserName;
     window.updateUserRole = updateUserRole;
@@ -796,4 +829,5 @@
 </script>
 </body>
 </html>
+
 
