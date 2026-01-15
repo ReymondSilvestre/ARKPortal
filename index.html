@@ -12,7 +12,7 @@
             --white: #ffffff; --border: #dfe6e9;
         }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: var(--bg); color: #333; }
-        nav { background: var(--primary); color: white; padding: 0.8rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top:0; z-index: 1000; }
+        nav { background: var(--primary); color: white; padding: 0.8rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top:0; z-index:1000; }
         .role-nav-container { display: flex; align-items: center; gap: 20px; }
         .sub-nav { background: var(--white); border-bottom: 1px solid var(--border); padding: 10px 2rem; display: flex; gap: 15px; overflow-x: auto; }
         .sub-nav button { background: #eee; color: #555; font-size: 13px; padding: 6px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; flex-shrink: 0; }
@@ -45,17 +45,6 @@
         .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:2200; }
         .modal { width:760px; max-width:95%; max-height:90vh; overflow:auto; border-radius:10px; }
         .search-inline { display:flex; gap:10px; align-items:center; margin-bottom:10px; }
-        .left-col { width: 260px; max-width: 35%; }
-        .teacher-layout { display:flex; gap: 16px; align-items:flex-start; }
-        .subject-list { background:#fff; border:1px solid #eee; border-radius:8px; padding:8px; max-height:400px; overflow:auto; }
-        .subject-item { padding:8px; border-radius:6px; cursor:pointer; margin-bottom:6px; border:1px solid transparent; }
-        .subject-item.active { background:var(--accent); color:white; border-color:rgba(0,0,0,0.06); }
-        .strand-list { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
-        .strand-pill { padding:6px 10px; background:#f1f1f1; border-radius:20px; cursor:pointer; border:1px solid transparent; }
-        .strand-pill.active { background:var(--accent); color:white; }
-        .strand-controls { display:flex; gap:6px; align-items:center; }
-        .subject-row { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
-        .subject-row input { width: auto; min-width: 140px; }
     </style>
 </head>
 <body>
@@ -81,7 +70,6 @@
         <button onclick="showSubPage('registrar', 'masterlist-page', this)">Masterlist & CRUD</button>
         <button onclick="showSubPage('registrar', 'requests-page', this)">Document Requests</button>
         <button onclick="showSubPage('registrar', 'schedule-page', this)">Post Schedule</button>
-        <button onclick="showSubPage('registrar', 'subjects-page', this)">Subject Management</button>
     </div>
     <div id="teacher-menu" class="sub-nav hidden">
         <button onclick="showSubPage('teacher', 'grading-page', this)" class="active">Grading Portal</button>
@@ -105,8 +93,18 @@
         <h2>Access Pending</h2>
         <p>Please wait for the Administrator to assign your role.</p>
     </div>
-
-    <!-- Registrar views -->
+    <section id="admin-view" class="view hidden">
+        <div id="admin-users-page" class="sub-view">
+            <div class="card">
+                <h3>System User Control</h3>
+                <input type="text" id="admin-search" placeholder="Search users by name, email, or role..." onkeyup="filterAdminUsers()">
+                <div id="user-list-admin" style="margin-top:15px;"></div>
+            </div>
+        </div>
+        <div id="admin-logs-page" class="sub-view hidden">
+            <div class="card"><h3>System Activity</h3><p>Log tracking coming soon...</p></div>
+        </div>
+    </section>
     <section id="registrar-view" class="view hidden">
         <div id="enrollment-page" class="sub-view">
             <div class="card">
@@ -118,9 +116,16 @@
                     <input type="text" id="reg-mname" placeholder="Middle Name">
                     <input type="number" id="reg-age" placeholder="Age">
                     <input type="date" id="reg-birthdate" placeholder="Birthdate">
+                    <input type="text" id="reg-address" placeholder="Address">
+                    <input type="text" id="reg-contact" placeholder="Contact No.">
+                    <input type="text" id="reg-emergency-name" placeholder="Emergency Contact Person">
+                    <input type="text" id="reg-emergency-number" placeholder="Emergency Contact Number">
                     <select id="reg-strand">
                         <option value="">Select Strand</option>
-                        <!-- strand options will be populated dynamically from strands collection -->
+                        <option value="ABM">ABM</option>
+                        <option value="HUMSS">HUMSS</option>
+                        <option value="H.E ICT">H.E ICT</option>
+                        <option value="GAS">GAS</option>
                     </select>
 
                     <!-- Voucher dropdown restored -->
@@ -134,10 +139,6 @@
 
                     <input type="text" id="reg-email" placeholder="Student's Google Email">
                     <input type="date" id="reg-date-enrolled" placeholder="Date Enrolled">
-                    <input type="text" id="reg-address" placeholder="Address">
-                    <input type="text" id="reg-contact" placeholder="Contact No.">
-                    <input type="text" id="reg-emergency-name" placeholder="Emergency Contact Person">
-                    <input type="text" id="reg-emergency-number" placeholder="Emergency Contact Number">
                 </div>
 
                 <div style="margin-top:10px;">
@@ -210,86 +211,134 @@
                 <small class="muted">You can upload a schedule image (from desktop) and assign it to a specific Grade - Section, or to All.</small>
             </div>
         </div>
-
-        <!-- NEW: Subject & Strand Management UI for Registrar -->
-        <div id="subjects-page" class="sub-view hidden">
-            <div class="card">
-                <h3>Subject & Strand Management</h3>
-
-                <!-- Strand Management -->
-                <div style="margin-bottom:12px;">
-                    <strong>Strands (editable)</strong>
-                    <div class="strand-list" id="strand-list"></div>
-                    <div style="display:flex; gap:8px; margin-top:8px;">
-                        <input id="new-strand-code" placeholder="Strand Code (e.g., ABM)">
-                        <input id="new-strand-name" placeholder="Strand Display Name (optional)">
-                        <button id="create-strand-btn" class="btn-main">Add Strand</button>
-                    </div>
-                    <small class="muted">You can add, edit or remove strands. Default list: ABM, HUMSS, H.E, ICT, GAS.</small>
-                </div>
-
-                <hr>
-
-                <!-- Subjects per Strand -->
-                <div id="strand-subjects-area">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <strong id="selected-strand-title">Select a strand to manage subjects</strong>
-                        <div id="selected-strand-controls" class="strand-controls"></div>
-                    </div>
-
-                    <div id="strand-subjects-list" style="margin-top:12px;"></div>
-
-                    <div style="display:flex; gap:8px; align-items:center; margin-top:12px;">
-                        <input id="subject-name" placeholder="Subject Name (e.g., Mathematics)">
-                        <input id="subject-grade" placeholder="Grade (e.g., 11)">
-                        <input id="subject-teacher-name" placeholder="Teacher Name">
-                        <input id="subject-teacher-email" placeholder="Teacher Email">
-                        <button id="create-subject-btn" class="btn-main">Add Subject to Strand</button>
-                    </div>
-                    <small class="muted">Each subject stored per strand contains: subject name, teacher's name/email and assigned grade (use blank if not grade-specific).</small>
-
-                </div>
-                <small class="muted" style="display:block; margin-top:10px;">Subjects are shown to students based on their strand & grade, and to teachers when they are assigned as teacherEmail.</small>
-            </div>
-        </div>
     </section>
-
-    <!-- Teacher view (unchanged structurally but uses strands/subjects data) -->
     <section id="teacher-view" class="view hidden">
         <div id="grading-page" class="sub-view">
             <div class="card">
-                <h3>Grading Portal</h3>
-                <div class="teacher-layout" style="margin-top:10px;">
-                    <div class="left-col">
-                        <h4 style="margin:6px 0;">My Subjects</h4>
-                        <div id="teacher-subject-list" class="subject-list"></div>
-                    </div>
-                    <div style="flex:1;">
-                        <h4>Subject: <span id="assigned-subject-title" style="color:var(--accent)">None selected</span></h4>
-                        <div style="display:flex; gap:8px; margin-bottom:10px; align-items:center;">
+                <h3>Subject: <span id="assigned-subject-title" style="color:var(--accent)"></span></h3>
+                <div class="grid">
+                    <div>
+                        <div style="display:flex; gap:8px; margin-bottom:8px;">
                             <select id="grade-student-select"></select>
-                            <input type="number" id="grade-value" placeholder="Enter Grade" style="width:110px;">
+                            <input type="number" id="grade-value" placeholder="Enter Grade">
                             <button id="save-grade-btn" class="btn-main">Post Grade</button>
                         </div>
-                        <div style="display:flex; gap:8px; align-items:center; margin-bottom: 10px;">
+                        <div style="display:flex; gap:8px; align-items:center;">
                             <input type="text" id="teacher-filter-student" placeholder="Filter by student name/email..." onkeyup="refreshTeacherGradeTable()">
                             <select id="teacher-filter-section" onchange="refreshTeacherGradeTable()">
                                 <option value="">All Sections</option>
                             </select>
                         </div>
-                        <div style="margin-top:12px;">
-                            <table>
-                                <thead><tr><th>Student</th><th>Grade</th><th>Date</th><th>Actions</th></tr></thead>
-                                <tbody id="teacher-grade-table"></tbody>
-                            </table>
-                        </div>
                     </div>
+                </div>
+                <div style="margin-top:12px;">
+                    <table>
+                        <thead><tr><th>Student</th><th>Grade</th><th>Date</th><th>Actions</th></tr></thead>
+                        <tbody id="teacher-grade-table"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </section>
+    <section id="finance-view" class="view hidden">
+        <div id="collections-page" class="sub-view">
+            <div class="card">
+                <h3>Collect Payment</h3>
+                <div class="grid">
+                    <div>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <select id="pay-student-select"></select>
+                            <select id="pay-section-filter" style="width:180px;">
+                                <option value="">Filter Section</option>
+                            </select>
+                        </div>
+                        <input type="number" id="pay-amount" placeholder="Amount">
+                        <select id="pay-category">
+                            <option value="Tuition Fee">Tuition Fee</option>
+                            <option value="Misc. Fee">Misc. Fee</option>
+                            <option value="Lab Fee">Lab Fee</option>
+                            <option value="Uniform">Uniform</option>
+                            <option value="Others">Others</option>
+                        </select>
+                        <button id="pay-btn" class="btn-main" style="width:100%">Record Payment</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="assessment-page" class="sub-view hidden">
+            <div class="card">
+                <h3>Detailed Fee Assessment</h3>
+                <p><small>Update specific fee components for each student. The total will update automatically.</small></p>
+                <div style="display:flex; gap:8px; align-items:center; margin-bottom: 15px;">
+                    <input type="text" id="finance-assessment-search" placeholder="Filter by Student Name or Email..." onkeyup="filterAssessment()" style="flex:1;">
+                    <select id="finance-section-filter" style="width:220px;" onchange="filterAssessment()">
+                        <option value="">All Sections</option>
+                    </select>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Current Total</th>
+                                <th>Fee Breakdown</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="finance-assessment-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
-    <!-- Finance and Student views omitted for brevity; assumed unchanged structurally -->
+        <div id="voucher-templates-page" class="sub-view hidden">
+            <div class="card">
+                <h3>Voucher Templates (Editable)</h3>
+                <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+                    <input id="new-voucher-code" placeholder="Voucher Code (e.g., PUB)">
+                    <button onclick="createEmptyVoucher()" class="btn-main">Create Template</button>
+                </div>
+                <div id="voucher-templates-list"></div>
+
+                <!-- template editor modal like area -->
+                <div id="voucher-editor" class="hidden" style="margin-top:10px;">
+                    <h4 id="voucher-editor-title"></h4>
+                    <div id="voucher-fee-list"></div>
+                    <div style="display:flex; gap:8px; margin-top:8px;">
+                        <input id="voucher-new-fee-name" placeholder="Fee name">
+                        <input id="voucher-new-fee-amount" type="number" placeholder="Amount">
+                        <button onclick="voucherAddFee()" class="btn-main">Add Fee</button>
+                    </div>
+                    <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px;">
+                        <button onclick="applyVoucherToStudents()" class="btn-outline">Apply to Students</button>
+                        <button id="save-voucher-btn" class="btn-main" onclick="saveVoucherTemplate()">Save Template</button>
+                        <button onclick="cancelVoucherEdit()" class="btn-outline">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="history-page" class="sub-view hidden">
+            <div class="card">
+                <h3>Payment History</h3>
+                <input type="text" id="finance-history-search" placeholder="Filter by Student Name or Email..." onkeyup="filterFinanceHistory()" style="margin-bottom: 15px;">
+                <div style="overflow-x:auto;">
+                    <table id="finance-log-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Student Email</th>
+                                <th>Amount</th>
+                                <th>Category</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="finance-log"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
     <section id="student-view" class="view hidden">
         <div id="stu-profile-page" class="sub-view">
             <div class="grid">
@@ -311,7 +360,7 @@
         <div id="stu-grades-page" class="sub-view hidden">
             <div class="card">
                 <h3>Grades</h3>
-                <table><thead><tr><th>Subject</th><th>Teacher</th><th>Grade</th></tr></thead><tbody id="stu-grade-body"></tbody></table>
+                <table><thead><tr><th>Subject</th><th>Grade</th></tr></thead><tbody id="stu-grade-body"></tbody></table>
             </div>
         </div>
         <div id="stu-schedule-page" class="sub-view hidden">
@@ -334,8 +383,8 @@
     </section>
 </div>
 
-<!-- Modals (kept as in original, omitted here for brevity) -->
-<div id="edit-student-modal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:2200;">
+<!-- Modal: Edit student from Masterlist -->
+<div id="edit-student-modal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:2100;">
     <div class="card modal">
         <h3>Edit Student</h3>
         <div class="grid">
@@ -351,6 +400,10 @@
             <input type="text" id="edit-emergency-number" placeholder="Emergency Contact Number">
             <select id="edit-strand">
                 <option value="">Select Strand</option>
+                <option value="ABM">ABM</option>
+                <option value="HUMSS">HUMSS</option>
+                <option value="H.E ICT">H.E ICT</option>
+                <option value="GAS">GAS</option>
             </select>
 
             <!-- Voucher dropdown in modal too -->
@@ -426,15 +479,6 @@
     // Voucher Templates - local cache loaded from Firestore
     let voucherTemplatesCache = {};
 
-    // Strand & Subject cache
-    let strandsCache = {}; // { strandId: { id, code, name, subjects: [ { name, teacherName, teacherEmail, grade } ] } }
-
-    // Selected strand in registrar UI
-    let selectedStrandId = null;
-
-    // Selected subject in teacher UI
-    let selectedSubjectForTeacher = null;
-
     // Initialize grade-section container with one row
     function addGradeSectionRow(data = {}) {
         const container = document.getElementById('grade-section-container');
@@ -493,9 +537,7 @@
         document.getElementById('edit-grade-section-container').innerHTML = '';
     }
 
-    // -------------------------
-    // Authentication state
-    // -------------------------
+    // auth state
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             let userRef = doc(db, "users", user.uid);
@@ -520,9 +562,8 @@
             currentUser = snap.data();
             currentUser.uid = user.uid;
             renderView(currentUser);
-            // Load voucher templates and strands on auth to populate UI caches
-            loadVoucherTemplates && loadVoucherTemplates();
-            subscribeStrands();
+            // Load voucher templates on auth to populate UI caches
+            loadVoucherTemplates();
         } else {
             document.getElementById('login-btn').classList.remove('hidden');
             document.getElementById('user-info').classList.add('hidden');
@@ -530,15 +571,11 @@
         }
     });
 
-    // login/logout wiring
-    document.getElementById('login-btn').onclick = () => signInWithPopup(auth, provider);
-    document.getElementById('logout-btn').onclick = () => signOut(auth);
-
     function renderView(user) {
         document.getElementById('login-btn').classList.add('hidden');
         document.getElementById('user-info').classList.remove('hidden');
         document.getElementById('user-name').innerText = user.name;
-        document.getElementById('user-role').innerText = (user.role || 'guest').toUpperCase();
+        document.getElementById('user-role').innerText = user.role?.toUpperCase() || 'GUEST';
         document.querySelectorAll('.view, .sub-nav').forEach(v => v.classList.add('hidden'));
         const mainView = document.getElementById(`${user.role}-view`) || document.getElementById('guest-view');
         if (mainView) mainView.classList.remove('hidden');
@@ -615,14 +652,14 @@
         alert("Subject Assigned!");
     };
     window.filterAdminUsers = () => {
-        const q = document.getElementById('admin-search')?.value?.toLowerCase() || '';
+        const q = document.getElementById('admin-search').value.toLowerCase();
         document.querySelectorAll('#user-list-admin .card').forEach(card => {
             card.style.display = card.innerText.toLowerCase().includes(q) ? 'flex' : 'none';
         });
     };
 
     // ────────────────────────────────────────────────
-    // REGISTRAR (Extended: strand & subject management)
+    // REGISTRAR (Extended: voucher dropdown + masterlist edit modal + search + schedule upload)
     // ────────────────────────────────────────────────
     function initRegistrar() {
         // masterlist - show students
@@ -692,10 +729,6 @@
         // set default date enrolled to today
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('reg-date-enrolled').value = today;
-
-        // Wire subject/strand UI actions
-        document.getElementById('create-strand-btn').onclick = addStrandHandler;
-        document.getElementById('create-subject-btn').onclick = createSubjectHandler;
     }
 
     window.releaseDocument = async (id) => {
@@ -916,361 +949,675 @@
         }
     };
 
-    // -------------------------
-    // Strand & Subject management (Firestore: collection 'strands')
-    // Each strand doc structure:
-    // { code: "ABM", name: "Accountancy, Business & Management", subjects: [ { name, teacherName, teacherEmail, grade } ] }
-    // -------------------------
-    function normalizeStrandId(code) {
-        if (!code) return '';
-        return code.toUpperCase().replace(/\s+/g, '-').replace(/[^A-Z0-9\-]/g, '');
+    window.closeMasterlistModal = () => {
+        editingMasterlistId = null;
+        document.getElementById('edit-student-modal').classList.add('hidden');
+    };
+
+    document.getElementById('save-edit-student-btn').onclick = async () => {
+        if (!editingMasterlistId) return alert("No student loaded");
+        const lrn = document.getElementById('edit-lrn').value.trim();
+        const lastName = document.getElementById('edit-lname').value.trim();
+        const firstName = document.getElementById('edit-fname').value.trim();
+        const middleName = document.getElementById('edit-mname').value.trim();
+        const age = document.getElementById('edit-age').value.trim();
+        const birthdate = document.getElementById('edit-birthdate').value;
+        const address = document.getElementById('edit-address').value.trim();
+        const contact = document.getElementById('edit-contact').value.trim();
+        const emergencyName = document.getElementById('edit-emergency-name').value.trim();
+        const emergencyNumber = document.getElementById('edit-emergency-number').value.trim();
+        const strand = document.getElementById('edit-strand').value;
+        const voucher = (document.getElementById('edit-voucher').value || 'NON-VOUCHER').toUpperCase();
+        const email = document.getElementById('edit-email').value.trim();
+        const dateEnrolled = document.getElementById('edit-date-enrolled').value || new Date().toLocaleDateString();
+
+        // collect grade sections from modal
+        const gsRows = document.querySelectorAll('#edit-grade-section-container .grade-row');
+        const gradeSections = [];
+        gsRows.forEach(r => {
+            const inputs = r.querySelectorAll('input');
+            const grade = (inputs[0] && inputs[0].value.trim()) || '';
+            const section = (inputs[1] && inputs[1].value.trim()) || '';
+            if (grade || section) gradeSections.push({ grade, section });
+        });
+
+        const displayName = `${lastName || ''}${lastName && (firstName || middleName) ? ', ' : ''}${firstName || ''} ${middleName || ''}`.trim();
+
+        try {
+            await updateDoc(doc(db, "users", editingMasterlistId), {
+                lrn,
+                lastName,
+                firstName,
+                middleName,
+                name: displayName || firstName || email,
+                email,
+                age: age ? Number(age) : null,
+                birthdate,
+                address,
+                contact,
+                emergencyName,
+                emergencyNumber,
+                strand,
+                gradeSections,
+                dateEnrolled,
+                voucher
+            });
+            alert("Student record updated.");
+            closeMasterlistModal();
+        } catch (err) {
+            console.error("Save edit error:", err);
+            alert("Failed to save changes: " + (err.message || "Check console"));
+        }
+    };
+
+    // masterlist search + section filter
+    window.filterMasterlist = () => {
+        const q = (document.getElementById('masterlist-search').value || '').toLowerCase().trim();
+        const sectionFilter = (document.getElementById('masterlist-section-filter').value || '').toLowerCase();
+        document.querySelectorAll('#masterlist-body tr').forEach(row => {
+            const search = row.dataset.search || '';
+            const sections = row.dataset.sections || '';
+            const matchesQ = search.includes(q);
+            const matchesSection = !sectionFilter || sections.includes(sectionFilter.replace('-',''));
+            row.style.display = (matchesQ && (sectionFilter ? sections.includes(sectionFilter) : true)) ? '' : 'none';
+            // simplified condition: if no section filter, only q matters; if section selected both must match
+            const show = (search.includes(q)) && (!sectionFilter || sections.includes(sectionFilter));
+            row.style.display = show ? '' : 'none';
+        });
+    };
+
+    // simple CSV export for masterlist if needed (exports what's currently in view)
+    window.exportMasterlistCSV = () => {
+        const rows = [['LRN','Name','Email','Strand','Grade & Section','Contact','Date Enrolled']];
+        document.querySelectorAll('#masterlist-body tr').forEach(tr => {
+            if (tr.style.display === 'none') return; // skip filtered out
+            const cols = Array.from(tr.querySelectorAll('td')).map(td => td.innerText.replace(/\n/g, ' / '));
+            rows.push(cols);
+        });
+        const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'masterlist.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    // ────────────────────────────────────────────────
+    // TEACHER (Enhanced: filter & edit/delete grades)
+    // ────────────────────────────────────────────────
+    async function initTeacher(user) {
+        document.getElementById('assigned-subject-title').innerText = user.subject || "Not Assigned";
+
+        // populate students select and section filter
+        onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
+            const students = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            document.getElementById('grade-student-select').innerHTML = students.map(s => `<option value="${s.email}">${s.name || s.email}</option>`).join('');
+            // populate teacher section filter
+            populateSectionFilters(students);
+            refreshTeacherGradeTable();
+        });
+
+        // watch grades for current subject
+        onSnapshot(query(collection(db, "grades"), where("subject", "==", user.subject || "__no_subject__")), (snap) => {
+            // keep a local list in a simple way by re-rendering
+            refreshTeacherGradeTable(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        });
     }
 
-    async function ensureDefaultStrandsIfEmpty() {
-        const col = collection(db, "strands");
-        const snap = await getDocs(col);
-        if (snap.empty) {
-            const defaults = [
-                { code: 'ABM', name: 'Accountancy, Business & Management', subjects: [] },
-                { code: 'HUMSS', name: 'Humanities and Social Sciences', subjects: [] },
-                { code: 'HE', name: 'Home Economics', subjects: [] },
-                { code: 'ICT', name: 'Information and Communications Technology', subjects: [] },
-                { code: 'GAS', name: 'General Academic Strand', subjects: [] }
-            ];
-            for (const s of defaults) {
-                await setDoc(doc(db, "strands", normalizeStrandId(s.code)), s, { merge: true });
+    // refresh teacher grade table with optional preloaded list
+    async function refreshTeacherGradeTable(preloaded = null) {
+        const subject = currentUser?.subject;
+        const filterQ = (document.getElementById('teacher-filter-student')?.value || '').toLowerCase();
+        const sectionFilter = (document.getElementById('teacher-filter-section')?.value || '') || '';
+        // fetch grades by subject if not provided
+        let grades = preloaded;
+        if (!grades) {
+            const snap = await getDocs(query(collection(db, "grades"), where("subject", "==", subject || "__no_subject__")));
+            grades = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        }
+        // optionally join each grade with student's sections (we'll query user by email)
+        const studentsByEmail = {};
+        const emailsToQuery = Array.from(new Set(grades.map(g => g.studentEmail)));
+        if (emailsToQuery.length) {
+            const userSnaps = await getDocs(query(collection(db, "users"), where("email", "in", emailsToQuery.length>10?emailsToQuery.slice(0,10):emailsToQuery)));
+            userSnaps.forEach(u => { studentsByEmail[u.data().email] = u.data(); });
+        }
+        document.getElementById('teacher-grade-table').innerHTML = grades.map(g => {
+            const student = studentsByEmail[g.studentEmail] || {};
+            const studentName = student.name || g.studentEmail;
+            const studentSections = (student.gradeSections || []).map(gs=>`${gs.grade}-${gs.section}`).join(', ');
+            const date = (g.timestamp && g.timestamp.toDate) ? g.timestamp.toDate().toLocaleDateString() : (g.date || '');
+            const matchesFilter = (!filterQ || `${studentName} ${g.studentEmail}`.toLowerCase().includes(filterQ));
+            const matchesSection = (!sectionFilter || studentSections.includes(sectionFilter));
+            if (!matchesFilter || !matchesSection) return '';
+            return `<tr data-id="${g.id}">
+                <td>${studentName}<br><small>${g.studentEmail}${studentSections ? ' • ' + studentSections : ''}</small></td>
+                <td>${g.grade}</td>
+                <td>${date}</td>
+                <td class="action-btns">
+                    <button onclick="editGrade('${g.id}')" class="btn-info">Edit</button>
+                    <button onclick="deleteGrade('${g.id}')" class="btn-danger">Delete</button>
+                </td>
+            </tr>`;
+        }).join('') || '<tr><td colspan="4">No grades yet</td></tr>';
+    }
+
+    window.editGrade = async (id) => {
+        const snap = await getDoc(doc(db, "grades", id));
+        if (!snap.exists()) return alert("Grade not found");
+        const g = snap.data();
+        const newVal = prompt("Edit Grade value:", g.grade);
+        if (newVal !== null && newVal.trim() !== '') {
+            await updateDoc(doc(db, "grades", id), { grade: newVal, editedAt: new Date() });
+            alert("Grade updated.");
+        }
+    };
+    window.deleteGrade = async (id) => {
+        if (confirm("Delete this grade?")) {
+            await deleteDoc(doc(db, "grades", id));
+            alert("Grade removed.");
+        }
+    };
+
+    document.getElementById('save-grade-btn').onclick = async () => {
+        if (!currentUser?.subject) return alert("No assigned subject!");
+        const studentEmail = document.getElementById('grade-student-select').value;
+        const grade = document.getElementById('grade-value').value.trim();
+        if (!studentEmail || !grade) return alert("Select student and enter grade");
+        await addDoc(collection(db, "grades"), {
+            studentEmail,
+            subject: currentUser.subject,
+            grade,
+            timestamp: new Date()
+        });
+        alert("Grade Saved!");
+        document.getElementById('grade-value').value = "";
+    };
+
+
+    // ────────────────────────────────────────────────
+    // FINANCE (Modified for Voucher logic + templates + filters)
+    // ────────────────────────────────────────────────
+    function refreshFinanceAssessment() {
+        const container = document.getElementById('finance-assessment-list');
+        if (!container) return;
+        container.innerHTML = financeStudentsCache.map(s => {
+            const fb = s.feeBreakdown || {};
+            const breakdownDisplay = Object.entries(fb)
+                .map(([k, v]) => `<div style="display:flex; justify-content:space-between; font-size:12px;">
+                    <span>${k.charAt(0).toUpperCase() + k.slice(1)}:</span> ₱${Number(v).toLocaleString()}</div>`)
+                .join('') || '<small style="color:#999">No fees set</small>';
+            return `
+            <tr data-id="${s.id}" data-sections="${(s.gradeSections||[]).map(gs=>`${gs.grade}-${gs.section}`).join('|')}">
+                <td>
+                    <strong>${s.name || '—'}</strong><br>
+                    <small>${s.email}</small><br>
+                    <span class="role-tag" style="background:#2980b9; font-size:10px;">${s.voucher || 'No Voucher'}</span>
+                </td>
+                <td>₱${Number(s.totalAssessment || 0).toLocaleString()}</td>
+                <td>${breakdownDisplay}</td>
+                <td><button onclick="openFeeModal('${s.id}')" class="btn-main">Edit Breakdown</button></td>
+            </tr>`;
+        }).join('');
+    }
+
+    function initFinance() {
+        onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
+            financeStudentsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            document.getElementById('pay-student-select').innerHTML = financeStudentsCache
+                .map(s => `<option value="${s.email}">${s.name || s.email}</option>`)
+                .join('');
+            refreshFinanceAssessment();
+            // populate section filters
+            populateSectionFilters(financeStudentsCache);
+        });
+        onSnapshot(query(collection(db, "payments"), orderBy("timestamp", "desc")), (snap) => {
+            document.getElementById('finance-log').innerHTML = snap.docs.map(d => {
+                const p = d.data();
+                return `
+                <tr data-student="${p.studentEmail}">
+                    <td>${p.date}</td>
+                    <td>${p.studentEmail}</td>
+                    <td>₱${Number(p.amount || 0).toLocaleString()}</td>
+                    <td>${p.category}</td>
+                    <td class="action-btns">
+                        <button onclick="editPayment('${d.id}', ${Number(p.amount || 0)})" class="btn-info">Edit</button>
+                        <button onclick="deletePayment('${d.id}')" class="btn-danger">Delete</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        });
+
+        // load voucher templates list
+        loadVoucherTemplatesUI();
+    }
+
+    // voucher templates functions
+    async function loadVoucherTemplates() {
+        const snap = await getDocs(collection(db, "voucher_templates"));
+        voucherTemplatesCache = {};
+        snap.forEach(d => {
+            voucherTemplatesCache[d.id] = d.data().fees || {};
+        });
+        // If defaults are missing, ensure PUB, NON-VOUCHER, ESC exist in cache so other flows work
+        if (!voucherTemplatesCache['PUB']) voucherTemplatesCache['PUB'] = { tuition:0, "misc fee":900, "intrams fee":200, uniform:0, "p.e uniform":0 };
+        if (!voucherTemplatesCache['NON-VOUCHER']) voucherTemplatesCache['NON-VOUCHER'] = { tuition:10000, "misc fee":900, "intrams fee":200, uniform:1000, "p.e uniform":1000 };
+        if (!voucherTemplatesCache['ESC']) voucherTemplatesCache['ESC'] = { tuition:7000, "misc fee":900, "intrams fee":200, uniform:1000, "p.e uniform":1000 };
+        // update UI if present
+        loadVoucherTemplatesUI();
+    }
+
+    // Render voucher templates UI list
+    function loadVoucherTemplatesUI() {
+        const container = document.getElementById('voucher-templates-list');
+        if (!container) return;
+        const keys = Object.keys(voucherTemplatesCache).sort();
+        container.innerHTML = keys.map(k => {
+            const t = voucherTemplatesCache[k];
+            const display = Object.entries(t).map(([n,v])=>`${n}: ₱${Number(v).toLocaleString()}`).join(' | ');
+            return `<div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:10px;">
+                <div><strong>${k}</strong><div style="font-size:12px; color:#666;">${display}</div></div>
+                <div style="display:flex; gap:8px;">
+                    <button onclick="startEditVoucher('${k}')" class="btn-info">Edit</button>
+                    <button onclick="deleteVoucherTemplate('${k}')" class="btn-danger">Delete</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function createEmptyVoucher(){
+        const code = (document.getElementById('new-voucher-code').value || '').trim().toUpperCase();
+        if(!code) return alert('Enter a voucher code');
+        voucherTemplatesCache[code] = {};
+        startEditVoucher(code);
+        document.getElementById('new-voucher-code').value = '';
+    }
+
+    function startEditVoucher(code){
+        const editor = document.getElementById('voucher-editor');
+        document.getElementById('voucher-editor-title').innerText = `Editing: ${code}`;
+        // load into editor area
+        const fees = {...(voucherTemplatesCache[code] || {})};
+        renderVoucherFeeList(fees);
+        editor.dataset.code = code;
+        editor.classList.remove('hidden');
+    }
+
+    function cancelVoucherEdit(){
+        const editor = document.getElementById('voucher-editor');
+        editor.dataset.code = '';
+        editor.classList.add('hidden');
+        loadVoucherTemplatesUI();
+    }
+
+    function renderVoucherFeeList(fees){
+        const list = document.getElementById('voucher-fee-list');
+        list.innerHTML = Object.entries(fees).map(([name, amt]) => `
+            <div class="breakdown-item">
+                <span class="fee-tag">${name.charAt(0).toUpperCase()+name.slice(1)}</span>
+                <input type="number" value="${Number(amt)}" data-name="${name.toLowerCase()}">
+                <button onclick="voucherRemoveFee(this)" class="btn-danger" style="padding:2px 6px;">X</button>
+            </div>
+        `).join('') || '<p style="color:#999">No fees yet. Add below.</p>';
+    }
+
+    function voucherAddFee(){
+        const name = (document.getElementById('voucher-new-fee-name').value || '').trim().toLowerCase();
+        const amount = Number(document.getElementById('voucher-new-fee-amount').value || 0);
+        if(!name || isNaN(amount)) return alert('Enter fee name and amount');
+        const list = document.getElementById('voucher-fee-list');
+        if(list.querySelector('p')) list.innerHTML = '';
+        const div = document.createElement('div');
+        div.className = 'breakdown-item';
+        div.innerHTML = `<span class="fee-tag">${name.charAt(0).toUpperCase() + name.slice(1)}</span>
+            <input type="number" value="${amount}" data-name="${name}">
+            <button onclick="voucherRemoveFee(this)" class="btn-danger" style="padding:2px 6px;">X</button>`;
+        list.appendChild(div);
+        document.getElementById('voucher-new-fee-name').value='';
+        document.getElementById('voucher-new-fee-amount').value='';
+    }
+
+    function voucherRemoveFee(btn){
+        btn.parentElement.remove();
+        if(document.getElementById('voucher-fee-list').children.length === 0) document.getElementById('voucher-fee-list').innerHTML = '<p style="color:#999">No fees yet. Add below.</p>';
+    }
+
+    async function saveVoucherTemplate(){
+        const code = document.getElementById('voucher-editor').dataset.code;
+        if(!code) return alert('No voucher loaded');
+        const inputs = document.querySelectorAll('#voucher-fee-list .breakdown-item input');
+        const fees = {};
+        inputs.forEach(i => {
+            const name = i.dataset.name;
+            const amt = Number(i.value) || 0;
+            if(name) fees[name] = amt;
+        });
+        // save to firestore
+        await setDoc(doc(db, "voucher_templates", code), { fees }, { merge: true });
+        voucherTemplatesCache[code] = fees;
+        alert('Voucher template saved.');
+        cancelVoucherEdit();
+        loadVoucherTemplatesUI();
+    }
+
+    async function deleteVoucherTemplate(code){
+        if(!confirm(`Delete voucher template ${code}?`)) return;
+        try{
+            await deleteDoc(doc(db, "voucher_templates", code));
+        }catch(e){ /* ignore not exists */ }
+        delete voucherTemplatesCache[code];
+        loadVoucherTemplatesUI();
+    }
+
+    // apply voucher template to students who have that voucher code
+    async function applyVoucherToStudents(){
+        const code = document.getElementById('voucher-editor').dataset.code;
+        if(!code) return alert('No voucher loaded');
+        if(!voucherTemplatesCache[code]) return alert('Template not in cache');
+        if(!confirm(`Apply template ${code} to all students with voucher ${code}? This will overwrite feeBreakdown and totalAssessment for those students.`)) return;
+        // find students with voucher code
+        const snap = await getDocs(query(collection(db, "users"), where("role","==","student")));
+        const toUpdate = [];
+        snap.forEach(d=>{
+            const s = d.data();
+            if((s.voucher||'').toUpperCase() === code.toUpperCase()){
+                const fees = {...voucherTemplatesCache[code]};
+                const total = Object.values(fees).reduce((a,b)=>a+Number(b||0),0);
+                toUpdate.push({ id: d.id, fees, total });
             }
-        }
-    }
-
-    function subscribeStrands() {
-        // ensure defaults and then subscribe
-        ensureDefaultStrandsIfEmpty().then(() => {
-            onSnapshot(collection(db, "strands"), (snap) => {
-                strandsCache = {};
-                snap.docs.forEach(d => {
-                    const data = d.data();
-                    const id = d.id;
-                    strandsCache[id] = { id, ...data };
-                });
-                renderStrandListUI();
-                populateStrandSelects();
-                renderSelectedStrandSubjects();
-                renderTeacherSubjects();
-                refreshStudentSubjectsDisplay();
-            });
-        }).catch(e => console.error("subscribeStrands error", e));
-    }
-
-    function renderStrandListUI() {
-        const container = document.getElementById('strand-list');
-        container.innerHTML = '';
-        Object.values(strandsCache).sort((a,b)=>a.code.localeCompare(b.code)).forEach(s => {
-            const pill = document.createElement('div');
-            pill.className = 'strand-pill';
-            if (selectedStrandId === s.id) pill.classList.add('active');
-            pill.innerText = s.code + (s.name ? ` • ${s.name}` : '');
-            pill.onclick = () => {
-                selectedStrandId = s.id;
-                renderStrandListUI();
-                renderSelectedStrandSubjects();
-            };
-            const editBtn = document.createElement('button');
-            editBtn.className = 'small-btn btn-info';
-            editBtn.style.padding = '4px 6px';
-            editBtn.innerText = 'Edit';
-            editBtn.onclick = (ev) => {
-                ev.stopPropagation();
-                const newCode = prompt("Strand Code:", s.code) || s.code;
-                const newName = prompt("Strand Display Name:", s.name || '') || s.name || '';
-                const newId = normalizeStrandId(newCode);
-                // if id changed perform a copy -> delete (Firestore doesn't support renaming)
-                (async () => {
-                    if (newId !== s.id) {
-                        await setDoc(doc(db, "strands", newId), { code: newCode.toUpperCase(), name: newName, subjects: s.subjects || [] });
-                        await deleteDoc(doc(db, "strands", s.id));
-                        if (selectedStrandId === s.id) selectedStrandId = newId;
-                    } else {
-                        await updateDoc(doc(db, "strands", s.id), { code: newCode.toUpperCase(), name: newName });
-                    }
-                    alert("Strand updated.");
-                })();
-            };
-            const delBtn = document.createElement('button');
-            delBtn.className = 'small-btn btn-danger';
-            delBtn.style.padding = '4px 6px';
-            delBtn.innerText = 'Delete';
-            delBtn.onclick = (ev) => {
-                ev.stopPropagation();
-                if (!confirm(`Delete strand ${s.code}? This will remove its subjects as well.`)) return;
-                deleteDoc(doc(db, "strands", s.id));
-                if (selectedStrandId === s.id) selectedStrandId = null;
-            };
-            const wrap = document.createElement('div');
-            wrap.style.display = 'flex';
-            wrap.style.gap = '6px';
-            wrap.style.alignItems = 'center';
-            wrap.appendChild(pill);
-            wrap.appendChild(editBtn);
-            wrap.appendChild(delBtn);
-            container.appendChild(wrap);
         });
-        if (Object.keys(strandsCache).length === 0) {
-            container.innerHTML = '<small class="muted">No strands defined yet.</small>';
+        // update each
+        for(const u of toUpdate){
+            await updateDoc(doc(db, "users", u.id), { feeBreakdown: u.fees, totalAssessment: u.total });
         }
+        alert(`Applied template to ${toUpdate.length} students.`);
+        // refresh local cache display
+        const snap2 = await getDocs(query(collection(db, "users"), where("role", "==", "student")));
+        financeStudentsCache = snap2.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshFinanceAssessment();
     }
 
-    async function addStrandHandler() {
-        const code = (document.getElementById('new-strand-code').value || '').trim();
-        const name = (document.getElementById('new-strand-name').value || '').trim();
-        if (!code) return alert('Strand code required (e.g., ABM).');
-        const id = normalizeStrandId(code);
-        await setDoc(doc(db, "strands", id), { code: code.toUpperCase(), name, subjects: [] }, { merge: true });
-        document.getElementById('new-strand-code').value = '';
-        document.getElementById('new-strand-name').value = '';
-        selectedStrandId = id;
-        alert('Strand added/updated.');
-    }
-
-    function renderSelectedStrandSubjects() {
-        const titleEl = document.getElementById('selected-strand-title');
-        const controls = document.getElementById('selected-strand-controls');
-        const listEl = document.getElementById('strand-subjects-list');
-        listEl.innerHTML = '';
-        controls.innerHTML = '';
-        if (!selectedStrandId) {
-            titleEl.innerText = 'Select a strand to manage subjects';
-            return;
+    // open fee modal for a student (uses voucher template if student has no breakdown)
+    window.openFeeModal = async (id) => {
+        // reload cache if empty
+        if(!financeStudentsCache.length){
+            const snap = await getDocs(query(collection(db, "users"), where("role","==","student")));
+            financeStudentsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         }
-        const s = strandsCache[selectedStrandId];
-        if (!s) {
-            titleEl.innerText = 'Selected strand not found';
-            return;
+        const student = financeStudentsCache.find(s => s.id === id) || (await (await getDoc(doc(db,"users",id))).data());
+        if (!student) return;
+        currentStudentId = id;
+        document.getElementById('modal-student-name').innerText = (student.name || student.email) + ` (${student.voucher || 'No Voucher'})`;
+        let fb = student.feeBreakdown || {};
+        if (Object.keys(fb).length === 0 && student.voucher && voucherTemplatesCache[student.voucher]) {
+            fb = {...voucherTemplatesCache[student.voucher]};
         }
-        titleEl.innerText = `${s.code} • ${s.name || ''}`;
-        const refreshBtn = document.createElement('button');
-        refreshBtn.className = 'small-btn btn-outline';
-        refreshBtn.innerText = 'Refresh';
-        refreshBtn.onclick = () => renderSelectedStrandSubjects();
-        controls.appendChild(refreshBtn);
-
-        (s.subjects || []).forEach((subj, idx) => {
-            const row = document.createElement('div');
-            row.className = 'subject-row';
-            const nameSpan = document.createElement('div');
-            nameSpan.style.flex = '1';
-            nameSpan.innerHTML = `<strong>${subj.name}</strong><br><small>${subj.teacherName || subj.teacherEmail || 'No teacher'} • Grade: ${subj.grade || '-'}</small>`;
-            const editBtn = document.createElement('button');
-            editBtn.className = 'small-btn btn-info';
-            editBtn.innerText = 'Edit';
-            editBtn.onclick = async () => {
-                const newName = prompt("Subject name:", subj.name) || subj.name;
-                const newTeacherName = prompt("Teacher name:", subj.teacherName || '') || subj.teacherName || '';
-                const newTeacherEmail = prompt("Teacher email:", subj.teacherEmail || '') || subj.teacherEmail || '';
-                const newGrade = prompt("Grade (leave blank for any):", subj.grade || '') || subj.grade || '';
-                const updated = { ...subj, name: newName, teacherName: newTeacherName, teacherEmail: newTeacherEmail, grade: newGrade };
-                const updatedSubjects = (s.subjects || []).slice();
-                updatedSubjects[idx] = updated;
-                await updateDoc(doc(db, "strands", s.id), { subjects: updatedSubjects });
-                alert('Updated subject.');
-            };
-            const delBtn = document.createElement('button');
-            delBtn.className = 'small-btn btn-danger';
-            delBtn.innerText = 'Remove';
-            delBtn.onclick = async () => {
-                if (!confirm('Remove subject?')) return;
-                const updatedSubjects = (s.subjects || []).slice();
-                updatedSubjects.splice(idx, 1);
-                await updateDoc(doc(db, "strands", s.id), { subjects: updatedSubjects });
-                alert('Subject removed.');
-            };
-            row.appendChild(nameSpan);
-            row.appendChild(editBtn);
-            row.appendChild(delBtn);
-            listEl.appendChild(row);
-        });
-
-        if ((s.subjects || []).length === 0) {
-            listEl.innerHTML = '<small class="muted">No subjects for this strand yet.</small>';
+        document.getElementById('fee-list').innerHTML = Object.entries(fb).map(([key, val]) => `
+            <div class="breakdown-item">
+                <span class="fee-tag">${key.charAt(0).toUpperCase() + key.slice(1)}</span>
+                <input type="number" value="${Number(val)}" data-name="${key.toLowerCase()}">
+                <button onclick="removeFeeItem(this)" class="btn-danger" style="padding:2px 6px;">X</button>
+            </div>
+        `).join('') || '<p style="color:#999">No fees yet. Add below.</p>';
+        document.getElementById('fee-modal').classList.remove('hidden');
+    };
+    window.closeModal = () => {
+        document.getElementById('fee-modal').classList.add('hidden');
+        currentStudentId = null;
+    };
+    window.addFeeItem = () => {
+        const nameInput = document.getElementById('new-fee-name');
+        const amountInput = document.getElementById('new-fee-amount');
+        const name = nameInput.value.trim().toLowerCase();
+        const amount = amountInput.value.trim();
+        if (!name || !amount || isNaN(amount)) return alert('Enter valid fee name and amount');
+        const feeList = document.getElementById('fee-list');
+        if (feeList.querySelector('p')) feeList.innerHTML = '';
+        const div = document.createElement('div');
+        div.className = 'breakdown-item';
+        div.innerHTML = `
+            <span class="fee-tag">${name.charAt(0).toUpperCase() + name.slice(1)}</span>
+            <input type="number" value="${Number(amount)}" data-name="${name}">
+            <button onclick="removeFeeItem(this)" class="btn-danger" style="padding:2px 6px;">X</button>
+        `;
+        feeList.appendChild(div);
+        nameInput.value = '';
+        amountInput.value = '';
+    };
+    window.removeFeeItem = (btn) => {
+        btn.parentElement.remove();
+        if (document.getElementById('fee-list').children.length === 0) {
+            document.getElementById('fee-list').innerHTML = '<p style="color:#999">No fees yet. Add below.</p>';
         }
-    }
-
-    async function createSubjectHandler() {
-        if (!selectedStrandId) return alert('Select a strand first (click a strand pill above).');
-        const name = (document.getElementById('subject-name').value || '').trim();
-        const grade = (document.getElementById('subject-grade').value || '').trim();
-        const teacherName = (document.getElementById('subject-teacher-name').value || '').trim();
-        const teacherEmail = (document.getElementById('subject-teacher-email').value || '').trim();
-        if (!name) return alert('Subject name required.');
-        const s = strandsCache[selectedStrandId];
-        const newSubj = { name, grade, teacherName, teacherEmail };
-        const updated = (s.subjects || []).concat([newSubj]);
-        await updateDoc(doc(db, "strands", s.id), { subjects: updated });
-        // clear inputs
-        document.getElementById('subject-name').value = '';
-        document.getElementById('subject-grade').value = '';
-        document.getElementById('subject-teacher-name').value = '';
-        document.getElementById('subject-teacher-email').value = '';
-        alert('Subject added to strand.');
-    }
-
-    function populateStrandSelects() {
-        // for enrollment and edit modal
-        const regSelect = document.getElementById('reg-strand');
-        const editSelect = document.getElementById('edit-strand');
-        const arr = Object.values(strandsCache).sort((a,b)=>a.code.localeCompare(b.code));
-        [regSelect, editSelect].forEach(sel => {
-            if (!sel) return;
-            const prev = sel.value;
-            sel.innerHTML = '<option value="">Select Strand</option>';
-            arr.forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = s.code;
-                opt.text = s.code + (s.name ? ` • ${s.name}` : '');
-                sel.appendChild(opt);
-            });
-            try { sel.value = prev || ''; } catch(e){}
-        });
-    }
-
-    // -------------------------
-    // Teacher UI: render subjects assigned to the current teacher
-    // -------------------------
-    function renderTeacherSubjects() {
-        const list = document.getElementById('teacher-subject-list');
-        list.innerHTML = '';
-        if (!currentUser) return;
-        const myEmail = currentUser.email;
-        const allSubjects = [];
-        Object.values(strandsCache).forEach(strand => {
-            (strand.subjects || []).forEach(subj => {
-                allSubjects.push({ strandCode: strand.code, strandName: strand.name, ...subj, strandId: strand.id });
-            });
-        });
-        // filter those assigned to teacher by email OR show all if teacher wants
-        const my = allSubjects.filter(s => s.teacherEmail && myEmail && s.teacherEmail.toLowerCase() === myEmail.toLowerCase());
-        const items = my.length ? my : allSubjects.filter(s => !s.teacherEmail || s.teacherEmail.toLowerCase() === myEmail?.toLowerCase());
-        items.forEach(s => {
-            const div = document.createElement('div');
-            div.className = 'subject-item';
-            div.innerHTML = `<strong>${s.name}</strong><br><small>${s.strandCode} • ${s.teacherName || s.teacherEmail || 'No teacher'} • Grade: ${s.grade || '-'}</small>`;
-            div.onclick = () => {
-                selectedSubjectForTeacher = s;
-                document.getElementById('assigned-subject-title').innerText = `${s.name} (${s.strandCode})`;
-                // populate student select based on grade-section filter
-                // NOTE: hooking into existing teacher workflow assumed; minimal integration here
-            };
-            list.appendChild(div);
-        });
-        if (list.innerHTML === '') {
-            list.innerHTML = '<small class="muted">No subjects assigned to you yet. Ask admin/registrar to assign a teacher email to subjects.</small>';
-        }
-    }
-
-    // -------------------------
-    // Student view: show subjects based on student's strand & grade
-    // -------------------------
-    function refreshStudentSubjectsDisplay() {
-        if (!currentUser || currentUser.role !== 'student') return;
-        const stuBody = document.getElementById('stu-grade-body');
-        stuBody.innerHTML = '';
-        // load student's document from users collection by email or uid
-        (async () => {
-            try {
-                const snap = await getDoc(doc(db, "users", currentUser.uid || currentUser.email));
-                const s = snap.exists() ? snap.data() : currentUser;
-                const strandCode = s.strand || '';
-                const gradeSection = (s.gradeSections && s.gradeSections[0]) || {};
-                const grade = gradeSection.grade || '';
-                // find strand in cache by code
-                const strand = Object.values(strandsCache).find(st => st.code === strandCode) || null;
-                if (!strand) {
-                    stuBody.innerHTML = `<tr><td colspan="3"><small class="muted">No subjects found for strand ${strandCode || '(not selected)'}.</small></td></tr>`;
-                    return;
+    };
+    window.saveFeeBreakdown = async () => {
+        if (!currentStudentId) return alert("No student selected.");
+        const saveBtn = document.getElementById('save-fee-btn');
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Saving...";
+        try {
+            const inputs = document.querySelectorAll('#fee-list .breakdown-item input');
+            const fb = {};
+            let total = 0;
+            inputs.forEach(input => {
+                const name = input.dataset.name;
+                const amount = Number(input.value) || 0;
+                if (name) {
+                    fb[name] = amount;
+                    total += amount;
                 }
-                const subjects = (strand.subjects || []).filter(sub => {
-                    if (!sub.grade) return true; // applicable to any grade
-                    return String(sub.grade) === String(grade);
-                });
-                if (subjects.length === 0) {
-                    stuBody.innerHTML = `<tr><td colspan="3"><small class="muted">No subjects yet for ${strand.code} • Grade ${grade || '-'}</small></td></tr>`;
-                    return;
+            });
+            await updateDoc(doc(db, "users", currentStudentId), {
+                feeBreakdown: fb,
+                totalAssessment: total
+            });
+            alert("Fee breakdown updated successfully!");
+            closeModal();
+            // refresh cache and UI
+            const snap = await getDocs(query(collection(db, "users"), where("role", "==", "student")));
+            financeStudentsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            refreshFinanceAssessment();
+        } catch (err) {
+            console.error("Save fee error:", err);
+            alert("Failed to save: " + (err.message || "Check console"));
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.textContent = "Save";
+        }
+    };
+    window.filterAssessment = () => {
+        const q = document.getElementById('finance-assessment-search').value.toLowerCase();
+        const sectionFilter = (document.getElementById('finance-section-filter').value || '').toLowerCase();
+        document.querySelectorAll('#finance-assessment-list tr').forEach(row => {
+            const txt = row.innerText.toLowerCase();
+            const sections = row.dataset.sections || '';
+            const matchesQ = txt.includes(q);
+            const matchesSection = !sectionFilter || sections.includes(sectionFilter);
+            row.style.display = (matchesQ && matchesSection) ? '' : 'none';
+        });
+    };
+    window.filterFinanceHistory = () => {
+        const q = document.getElementById('finance-history-search').value.toLowerCase();
+        document.querySelectorAll('#finance-log tr').forEach(row => {
+            row.style.display = row.innerText.toLowerCase().includes(q) ? 'table-row' : 'none';
+        });
+    };
+    window.deletePayment = async (id) => {
+        if (confirm("Confirm Delete? Student balance will update.")) {
+            await deleteDoc(doc(db, "payments", id));
+            alert("Payment deleted.");
+        }
+    };
+    window.editPayment = async (id, currentAmount) => {
+        const newAmt = prompt("Update Payment Amount:", currentAmount);
+        if (newAmt !== null && !isNaN(newAmt) && Number(newAmt) >= 0) {
+            await updateDoc(doc(db, "payments", id), { amount: Number(newAmt) });
+            alert("Payment updated.");
+        }
+    };
+    document.getElementById('pay-btn').onclick = async () => {
+        const amt = document.getElementById('pay-amount').value.trim();
+        if (!amt || isNaN(amt) || Number(amt) <= 0) return alert("Enter valid amount");
+        await addDoc(collection(db, "payments"), {
+            studentEmail: document.getElementById('pay-student-select').value,
+            amount: Number(amt),
+            category: document.getElementById('pay-category').value,
+            date: new Date().toLocaleDateString(),
+            timestamp: new Date()
+        });
+        alert("Payment Recorded!");
+        document.getElementById('pay-amount').value = "";
+    };
+
+    // ────────────────────────────────────────────────
+    // STUDENT (Expanded: show all enrollment data + schedule per-section)
+    // ────────────────────────────────────────────────
+    async function initStudent(user) {
+        onSnapshot(doc(db, "users", user.uid), async (s) => {
+            if (!s.exists()) return;
+            const d = s.data();
+            // build full enrollment display with all fields
+            const gradeSections = (d.gradeSections || []).map(gs => `${gs.grade || ''} - ${gs.section || ''}`).join('<br>') || '-';
+            const enrollmentHtml = `
+                <p><strong>${d.name || '—'}</strong><br>${d.email}<br>LRN: ${d.lrn || 'N/A'}</p>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <div style="min-width:180px;"><strong>Last Name</strong><div>${d.lastName || '-'}</div></div>
+                    <div style="min-width:180px;"><strong>First Name</strong><div>${d.firstName || '-'}</div></div>
+                    <div style="min-width:180px;"><strong>Middle Name</strong><div>${d.middleName || '-'}</div></div>
+                    <div style="min-width:120px;"><strong>Age</strong><div>${d.age || '-'}</div></div>
+                    <div style="min-width:160px;"><strong>Birthdate</strong><div>${d.birthdate || '-'}</div></div>
+                </div>
+                <div style="margin-top:8px;">
+                    <div><strong>Address</strong><div>${d.address || '-'}</div></div>
+                    <div><strong>Contact</strong><div>${d.contact || '-'}</div></div>
+                    <div><strong>Emergency Contact</strong><div>${d.emergencyName || '-'} • ${d.emergencyNumber || '-'}</div></div>
+                    <div><strong>Strand</strong><div>${d.strand || '-'}</div></div>
+                    <div><strong>Voucher</strong><div>${d.voucher || '-'}</div></div>
+                    <div><strong>Grade & Section</strong><div>${gradeSections}</div></div>
+                    <div><strong>Date Enrolled</strong><div>${d.dateEnrolled || '-'}</div></div>
+                    <div><strong>Google Account</strong><div>${d.googleAccount || '-'}</div></div>
+                </div>
+            `;
+            document.getElementById('stu-info-display').innerHTML = enrollmentHtml;
+
+            // fees & balance display
+            const fb = d.feeBreakdown || {};
+            document.getElementById('stu-breakdown-display').innerHTML = `
+                <div style="font-weight:bold; margin-bottom:5px;">Fee Breakdown:</div>
+                ${Object.entries(fb).map(([k,v]) => `
+                    <div style="display:flex; justify-content:space-between;">
+                        <span>${k.charAt(0).toUpperCase() + k.slice(1)}:</span>
+                        <span>₱${Number(v).toLocaleString()}</span>
+                    </div>`).join('') || '<div style="color:#999">No fees set</div>'}
+                <hr style="opacity:0.2">
+                <div style="display:flex; justify-content:space-between; font-weight:bold;">
+                    <span>Total Required:</span>
+                    <span>₱${Number(d.totalAssessment || 0).toLocaleString()}</span>
+                </div>
+            `;
+            // payment history and balance
+            const pSnap = await getDocs(query(collection(db, "payments"), where("studentEmail", "==", user.email)));
+            let paid = 0;
+            let receipts = "";
+            pSnap.forEach(p => {
+                const data = p.data();
+                paid += Number(data.amount || 0);
+                receipts += `<div class="card" style="padding:10px; margin-bottom:5px; font-size:13px;">
+                    <strong>${data.date}</strong> - ${data.category}: ₱${Number(data.amount || 0).toLocaleString()}
+                </div>`;
+            });
+            const balance = Number(d.totalAssessment || 0) - paid;
+            document.getElementById('stu-balance').innerText = `₱${balance.toLocaleString()}`;
+            document.getElementById('stu-receipt-list').innerHTML = receipts || "<p>No payment records found.</p>";
+        });
+
+        onSnapshot(query(collection(db, "grades"), where("studentEmail", "==", user.email)), (snap) => {
+            document.getElementById('stu-grade-body').innerHTML = snap.docs.map(d => {
+                const g = d.data();
+                return `<tr><td>${g.subject}</td><td>${g.grade}</td></tr>`;
+            }).join('') || '<tr><td colspan="2">No grades yet</td></tr>';
+        });
+
+        // Show schedule prioritized by student's section
+        onSnapshot(doc(db, "settings", "schedule"), (s) => {
+            if (!s.exists()) return;
+            const data = s.data();
+            // Try to find schedule for student's grade-section keys
+            (async () => {
+                const uSnap = await getDoc(doc(db, "users", user.uid));
+                if (!uSnap.exists()) return;
+                const u = uSnap.data();
+                const sections = (u.gradeSections || []).map(gs => `${gs.grade}-${gs.section}`);
+                let found = null;
+                for (const key of sections) {
+                    if (data[key]) { found = data[key].imgUrl; break; }
                 }
-                subjects.forEach(sub => {
-                    const tr = document.createElement('tr');
-                    const teacher = sub.teacherName || sub.teacherEmail || '-';
-                    // grade value: we don't have stored student-side grade mapping; show placeholder '-'
-                    const gradeVal = '-';
-                    tr.innerHTML = `<td>${sub.name}</td><td>${teacher}</td><td>${gradeVal}</td>`;
-                    stuBody.appendChild(tr);
-                });
-            } catch (e) {
-                console.error("refreshStudentSubjectsDisplay error", e);
+                if (!found && data.default) found = data.default.imgUrl;
+                if (found) document.getElementById('stu-schedule-img').src = found;
+            })();
+        });
+    }
+
+    document.getElementById('stu-req-btn').onclick = async () => {
+        const type = document.getElementById('stu-req-type').value;
+        await addDoc(collection(db, "requests"), {
+            studentEmail: currentUser.email,
+            studentName: currentUser.name,
+            type,
+            timestamp: new Date()
+        });
+        alert("Request Sent!");
+    };
+
+    function downloadEnrollmentJSON(){
+        // fetch current user's enrollment doc and download as JSON
+        (async ()=>{
+            try{
+                const snap = await getDoc(doc(db, "users", currentUser.uid));
+                if(!snap.exists()) return alert('No enrollment data found');
+                const data = snap.data();
+                const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${(data.name||'enrollment').replace(/\s+/g,'_')}_enrollment.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }catch(e){
+                alert('Failed to download: '+(e.message||''));
             }
         })();
     }
 
-    // Call refreshStudentSubjectsDisplay when student view becomes visible or strands change:
-    // Already invoked in subscribeStrands() after cache update.
+    // ────────────────────────────────────────────────
+    // GLOBAL (Unchanged with additional bindings)
+    // ────────────────────────────────────────────────
+    document.getElementById('login-btn').onclick = () => signInWithPopup(auth, provider);
+    document.getElementById('logout-btn').onclick = () => signOut(auth).then(() => location.reload());
+    window.deleteUserAccount = deleteUserAccount;
+    window.modifyUserName = modifyUserName;
+    window.updateUserRole = updateUserRole;
+    window.assignSubject = assignSubject;
+    window.deletePayment = deletePayment;
+    window.editPayment = editPayment;
+    window.openFeeModal = openFeeModal;
+    window.closeModal = closeModal;
+    window.addFeeItem = addFeeItem;
+    window.removeFeeItem = removeFeeItem;
+    window.saveFeeBreakdown = saveFeeBreakdown;
+    window.addGradeSectionRow = addGradeSectionRow;
+    window.resetEnrollmentForm = resetEnrollmentForm;
+    window.loadStudentToForm = loadStudentToForm;
+    window.openMasterlistEdit = openMasterlistEdit;
+    window.addModalGradeSectionRow = addModalGradeSectionRow;
+    window.closeMasterlistModal = closeMasterlistModal;
+    window.exportMasterlistCSV = exportMasterlistCSV;
+    window.filterMasterlist = filterMasterlist;
 
-    // -------------------------
-    // Utility: small existing functions referenced earlier (placeholders if missing)
-    // -------------------------
-    // Minimal implementations for functions that were referenced earlier but not shown in snippet.
-    async function loadVoucherTemplates() {
-        // placeholder: load voucher templates into cache usage in enrollment
-        try {
-            const snap = await getDocs(collection(db, "voucher_templates"));
-            voucherTemplatesCache = {};
-            snap.docs.forEach(d => voucherTemplatesCache[d.id] = d.data());
-        } catch (e) {
-            // ignore if not present
-        }
-    }
-
-    // Placeholder for initTeacher/initFinance/initStudent if not defined elsewhere
-    function initTeacher(user) {
-        // teacher-specific initialization can go here. renderTeacherSubjects will be called when strandsCache updates.
-        renderTeacherSubjects();
-    }
-    function initFinance() {
-        // finance initialization stub
-    }
-    function initStudent(user) {
-        // initial student UI rendering
-        refreshStudentSubjectsDisplay();
-    }
-
-    // Export CSV placeholder used earlier
-    function exportMasterlistCSV() {
-        alert('Export CSV not implemented in this patch.');
-    }
-
-    // Filter masterlist
-    function filterMasterlist() {
-        const q = document.getElementById('masterlist-search').value.toLowerCase();
-        const sectionFilter = document.getElementById('masterlist-section-filter').value;
-        document.querySelectorAll('#masterlist-body tr').forEach(tr => {
-            const matches = (tr.dataset.search || '').includes(q);
-            const sections = (tr.dataset.sections || '');
-            const sectionMatch = !sectionFilter || sections.includes(sectionFilter.replace('-', '|'));
-            tr.style.display = (matches && sectionMatch) ? '' : 'none';
-        });
-    }
-
-    // Close edit modal
-    function closeMasterlistModal() {
-        document.getElementById('edit-student-modal').classList.add('hidden');
-    }
-
-    // small helpers used by other existing UI elements
-    function addFeeItem() {}
-    function saveFeeBreakdown() {}
-    function closeModal() {}
-    function downloadEnrollmentJSON() {}
-
-    // Initial call in case user is already signed in and subscribeStrands was not called yet
-    // (subscribeStrands() is called in onAuthStateChanged above)
+    // initialize voucher templates on load
+    loadVoucherTemplates();
 </script>
 </body>
 </html>
