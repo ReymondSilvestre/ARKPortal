@@ -30,13 +30,18 @@
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
         .role-tag { font-size: 0.7rem; background: var(--danger); padding: 4px 10px; border-radius: 20px; color: white; margin-left: 10px; text-transform: uppercase; }
         table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; margin-top: 10px; }
-        table th, table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+        table th, table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; vertical-align: top; }
         table th { background: #f8fafb; color: var(--primary); }
         .action-btns { display: flex; gap: 5px; }
         .action-btns button { padding: 5px 10px; font-size: 12px; }
         #stu-schedule-img { max-width: 100%; border-radius: 8px; border: 2px solid var(--border); }
         .breakdown-item { display: flex; gap: 10px; align-items: center; margin-bottom: 5px; }
         .fee-tag { background: #f1f2f6; padding: 2px 8px; border-radius: 4px; font-size: 11px; color: #666; margin-right: 5px; }
+        .small-btn { padding:6px 10px; font-size:13px; border-radius:6px; }
+        .inline-row { display:flex; gap:10px; align-items:center; }
+        .grade-row { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+        .grade-row input { width: 45%; padding:8px; margin:0; }
+        .muted { color:#666; font-size:13px; }
     </style>
 </head>
 <body>
@@ -99,20 +104,45 @@
     <section id="registrar-view" class="view hidden">
         <div id="enrollment-page" class="sub-view">
             <div class="card">
-                <h3>New Student Enrollment</h3>
+                <h3 id="enroll-title">New Student Enrollment</h3>
                 <div class="grid">
-                    <input type="text" id="reg-lrn" placeholder="LRN">
-                    <select id="reg-voucher">
-                        <option value="NON-VOUCHER">Non-Voucher</option>
-                        <option value="PUB">Public (PUB)</option>
-                        <option value="ALS">ALS</option>
-                        <option value="ESC">ESC</option>
-                    </select>
+                    <input type="text" id="reg-lrn" placeholder="Learner Reference Number (LRN)">
                     <input type="text" id="reg-lname" placeholder="Last Name">
                     <input type="text" id="reg-fname" placeholder="First Name">
-                    <input type="email" id="reg-email" placeholder="Student's Google Email">
+                    <input type="text" id="reg-mname" placeholder="Middle Name">
+                    <input type="number" id="reg-age" placeholder="Age">
+                    <input type="date" id="reg-birthdate" placeholder="Birthdate">
+                    <input type="text" id="reg-address" placeholder="Address">
+                    <input type="text" id="reg-contact" placeholder="Contact No.">
+                    <input type="text" id="reg-emergency-name" placeholder="Emergency Contact Person">
+                    <input type="text" id="reg-emergency-number" placeholder="Emergency Contact Number">
+                    <select id="reg-strand">
+                        <option value="">Select Strand</option>
+                        <option value="ABM">ABM</option>
+                        <option value="HUMSS">HUMSS</option>
+                        <option value="H.E ICT">H.E ICT</option>
+                        <option value="GAS">GAS</option>
+                    </select>
+                    <input type="text" id="reg-voucher" placeholder="Voucher (e.g., NON-VOUCHER/PUB/ALS/ESC)" value="NON-VOUCHER">
+                    <input type="text" id="reg-email" placeholder="Student's Google Email">
+                    <input type="date" id="reg-date-enrolled" placeholder="Date Enrolled">
                 </div>
-                <button id="enroll-btn" class="btn-main" style="width:100%; margin-top:20px;">ENROLL & CREATE ACCOUNT</button>
+
+                <div style="margin-top:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <strong>Grade & Section</strong>
+                        <div>
+                            <button id="add-grade-btn" class="small-btn btn-main" onclick="addGradeSectionRow()">Add Grade/Section</button>
+                        </div>
+                    </div>
+                    <div id="grade-section-container" style="margin-top:8px;"></div>
+                    <small class="muted">You can add multiple Grade & Section entries. Use Edit on masterlist to load entries for modification.</small>
+                </div>
+
+                <div style="margin-top:20px; display:flex; gap:10px;">
+                    <button id="enroll-btn" class="btn-main" style="flex:1;">ENROLL & CREATE ACCOUNT</button>
+                    <button id="cancel-edit-btn" class="btn-outline hidden" style="flex:1;" onclick="resetEnrollmentForm()">Cancel</button>
+                </div>
             </div>
         </div>
         <div id="masterlist-page" class="sub-view hidden">
@@ -120,7 +150,18 @@
                 <h3>Student Masterlist</h3>
                 <div style="overflow-x:auto;">
                     <table>
-                        <thead><tr><th>LRN</th><th>Name</th><th>Email</th><th>Actions</th></tr></thead>
+                        <thead>
+                            <tr>
+                                <th>LRN</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Strand</th>
+                                <th>Grade & Section</th>
+                                <th>Contact</th>
+                                <th>Date Enrolled</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
                         <tbody id="masterlist-body"></tbody>
                     </table>
                 </div>
@@ -287,6 +328,8 @@
     let currentUser = null;
     let currentStudentId = null;
     let financeStudentsCache = [];
+    let editingStudentId = null;
+
     // Voucher Templates
     const VOUCHER_TEMPLATES = {
         'PUB': {
@@ -311,6 +354,39 @@
             'p.e uniform': 1000
         }
     };
+
+    // Initialize grade-section container with one row
+    function addGradeSectionRow(data = {}) {
+        const container = document.getElementById('grade-section-container');
+        const div = document.createElement('div');
+        div.className = 'grade-row';
+        const gradeInput = document.createElement('input');
+        gradeInput.placeholder = 'Grade (e.g., 11)';
+        gradeInput.value = data.grade || '';
+        const sectionInput = document.createElement('input');
+        sectionInput.placeholder = 'Section (e.g., A)';
+        sectionInput.value = data.section || '';
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'btn-danger';
+        removeBtn.style.padding = '6px 8px';
+        removeBtn.innerText = 'X';
+        removeBtn.onclick = () => {
+            div.remove();
+        };
+        gradeInput.type = 'text';
+        sectionInput.type = 'text';
+        div.appendChild(gradeInput);
+        div.appendChild(sectionInput);
+        div.appendChild(removeBtn);
+        container.appendChild(div);
+    }
+
+    function clearGradeSectionRows() {
+        const container = document.getElementById('grade-section-container');
+        container.innerHTML = '';
+    }
+
+    // auth state
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             let userRef = doc(db, "users", user.uid);
@@ -341,6 +417,7 @@
             document.querySelectorAll('.view, .sub-nav').forEach(v => v.classList.add('hidden'));
         }
     });
+
     function renderView(user) {
         document.getElementById('login-btn').classList.add('hidden');
         document.getElementById('user-info').classList.remove('hidden');
@@ -357,12 +434,14 @@
         if (user.role === 'finance') initFinance();
         if (user.role === 'student') initStudent(user);
     }
+
     window.showSubPage = (role, pageId, btn) => {
         document.querySelectorAll(`#${role}-view .sub-view`).forEach(v => v.classList.add('hidden'));
         document.getElementById(pageId).classList.remove('hidden');
         document.querySelectorAll(`#${role}-menu button`).forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
     };
+
     // ────────────────────────────────────────────────
     // ADMIN (Unchanged)
     // ────────────────────────────────────────────────
@@ -425,17 +504,37 @@
             card.style.display = card.innerText.toLowerCase().includes(q) ? 'flex' : 'none';
         });
     };
+
     // ────────────────────────────────────────────────
-    // REGISTRAR (Unchanged)
+    // REGISTRAR (Extended: enrollment fields + edit/load)
     // ────────────────────────────────────────────────
     function initRegistrar() {
+        // masterlist - show students
         onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
             document.getElementById('masterlist-body').innerHTML = snap.docs.map(d => {
                 const s = d.data();
-                return `<tr><td>${s.lrn || '-'}</td><td>${s.name || '—'}</td><td>${s.email}</td>
-                <td><button onclick="deleteUserAccount('${d.id}')" class="btn-danger">Remove</button></td></tr>`;
+                const id = d.id;
+                const name = s.name || `${s.lastName || ''} ${s.firstName || ''}`.trim() || '—';
+                const gradeSections = (s.gradeSections || []).map(gs => `${gs.grade || ''} - ${gs.section || ''}`).join('<br>') || '-';
+                return `<tr>
+                    <td>${s.lrn || '-'}</td>
+                    <td><strong>${name}</strong><br><small>${s.lastName || ''}, ${s.firstName || ''} ${s.middleName || ''}</small></td>
+                    <td>${s.email || '-'}</td>
+                    <td>${s.strand || '-'}</td>
+                    <td>${gradeSections}</td>
+                    <td>${s.contact || '-'}</td>
+                    <td>${s.dateEnrolled || '-'}</td>
+                    <td>
+                        <div class="action-btns">
+                            <button onclick="loadStudentToForm('${id}')" class="btn-info">Edit</button>
+                            <button onclick="deleteUserAccount('${id}')" class="btn-danger">Remove</button>
+                        </div>
+                    </td>
+                </tr>`;
             }).join('');
         });
+
+        // requests
         onSnapshot(collection(db, "requests"), (snap) => {
             document.getElementById('admin-request-list').innerHTML = snap.docs.map(d => `
                 <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
@@ -443,6 +542,8 @@
                     <button onclick="releaseDocument('${d.id}')" class="btn-main">Mark Released</button>
                 </div>`).join('');
         });
+
+        // schedule update
         document.getElementById('update-sched-btn').onclick = async () => {
             const url = document.getElementById('sched-img-input').value.trim();
             if (url) {
@@ -452,7 +553,15 @@
                 alert('Please enter a valid image URL');
             }
         };
+
+        // ensure grade section container has one row when opening
+        clearGradeSectionRows();
+        addGradeSectionRow();
+        // set default date enrolled to today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('reg-date-enrolled').value = today;
     }
+
     window.releaseDocument = async (id) => {
         const snap = await getDoc(doc(db, "requests", id));
         if (snap.exists()) {
@@ -462,21 +571,135 @@
             alert("Document released!");
         }
     };
+
+    // enroll/create or update
     document.getElementById('enroll-btn').onclick = async () => {
+        // gather fields
         const email = document.getElementById('reg-email').value.trim();
         if (!email) return alert("Email required!");
-        const name = `${document.getElementById('reg-lname').value.trim()}, ${document.getElementById('reg-fname').value.trim()}`.trim();
-        await setDoc(doc(db, "users", email), {
-            lrn: document.getElementById('reg-lrn').value.trim(),
-            name: name || "Unnamed Student",
-            email: email,
-            role: 'student',
-            totalAssessment: 0,
-            feeBreakdown: {},
-            voucher: document.getElementById('reg-voucher').value // This is critical for Finance
+        const lrn = document.getElementById('reg-lrn').value.trim();
+        const lastName = document.getElementById('reg-lname').value.trim();
+        const firstName = document.getElementById('reg-fname').value.trim();
+        const middleName = document.getElementById('reg-mname').value.trim();
+        const age = document.getElementById('reg-age').value.trim();
+        const birthdate = document.getElementById('reg-birthdate').value;
+        const address = document.getElementById('reg-address').value.trim();
+        const contact = document.getElementById('reg-contact').value.trim();
+        const emergencyName = document.getElementById('reg-emergency-name').value.trim();
+        const emergencyNumber = document.getElementById('reg-emergency-number').value.trim();
+        const strand = document.getElementById('reg-strand').value;
+        const voucher = (document.getElementById('reg-voucher').value || 'NON-VOUCHER').toUpperCase();
+        const dateEnrolled = document.getElementById('reg-date-enrolled').value || new Date().toLocaleDateString();
+
+        // collect grade sections
+        const gsRows = document.querySelectorAll('#grade-section-container .grade-row');
+        const gradeSections = [];
+        gsRows.forEach(r => {
+            const inputs = r.querySelectorAll('input');
+            const grade = (inputs[0] && inputs[0].value.trim()) || '';
+            const section = (inputs[1] && inputs[1].value.trim()) || '';
+            if (grade || section) gradeSections.push({ grade, section });
         });
-        alert("Enrolled!");
+
+        // default doc id for new use-case: email (keeps compatibility with precreated)
+        const docId = editingStudentId || email;
+
+        // prepare name and doc content
+        const displayName = `${lastName || ''}${lastName && (firstName || middleName) ? ', ' : ''}${firstName || ''} ${middleName || ''}`.trim();
+        try {
+            await setDoc(doc(db, "users", docId), {
+                lrn,
+                lastName,
+                firstName,
+                middleName,
+                name: displayName || (firstName || email),
+                email,
+                role: 'student',
+                age: age ? Number(age) : null,
+                birthdate,
+                address,
+                contact,
+                emergencyName,
+                emergencyNumber,
+                strand,
+                gradeSections,
+                dateEnrolled,
+                googleAccount: email,
+                totalAssessment: 0,
+                feeBreakdown: {},
+                voucher
+            }, { merge: true });
+
+            alert(editingStudentId ? "Student updated!" : "Enrolled!");
+            resetEnrollmentForm();
+        } catch (err) {
+            console.error("Enroll error:", err);
+            alert("Failed to enroll/update: " + (err.message || "Check console"));
+        }
     };
+
+    window.resetEnrollmentForm = () => {
+        editingStudentId = null;
+        document.getElementById('enroll-title').innerText = 'New Student Enrollment';
+        document.getElementById('enroll-btn').innerText = 'ENROLL & CREATE ACCOUNT';
+        document.getElementById('cancel-edit-btn').classList.add('hidden');
+        document.getElementById('reg-lrn').value = '';
+        document.getElementById('reg-lname').value = '';
+        document.getElementById('reg-fname').value = '';
+        document.getElementById('reg-mname').value = '';
+        document.getElementById('reg-age').value = '';
+        document.getElementById('reg-birthdate').value = '';
+        document.getElementById('reg-address').value = '';
+        document.getElementById('reg-contact').value = '';
+        document.getElementById('reg-emergency-name').value = '';
+        document.getElementById('reg-emergency-number').value = '';
+        document.getElementById('reg-strand').value = '';
+        document.getElementById('reg-voucher').value = 'NON-VOUCHER';
+        document.getElementById('reg-email').value = '';
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('reg-date-enrolled').value = today;
+        clearGradeSectionRows();
+        addGradeSectionRow();
+    };
+
+    window.loadStudentToForm = async (id) => {
+        try {
+            const snap = await getDoc(doc(db, "users", id));
+            if (!snap.exists()) return alert("Student not found");
+            const s = snap.data();
+            editingStudentId = id;
+            document.getElementById('enroll-title').innerText = 'Update Student';
+            document.getElementById('enroll-btn').innerText = 'Update Student';
+            document.getElementById('cancel-edit-btn').classList.remove('hidden');
+
+            document.getElementById('reg-lrn').value = s.lrn || '';
+            document.getElementById('reg-lname').value = s.lastName || '';
+            document.getElementById('reg-fname').value = s.firstName || '';
+            document.getElementById('reg-mname').value = s.middleName || '';
+            document.getElementById('reg-age').value = s.age || '';
+            document.getElementById('reg-birthdate').value = s.birthdate || '';
+            document.getElementById('reg-address').value = s.address || '';
+            document.getElementById('reg-contact').value = s.contact || '';
+            document.getElementById('reg-emergency-name').value = s.emergencyName || '';
+            document.getElementById('reg-emergency-number').value = s.emergencyNumber || '';
+            document.getElementById('reg-strand').value = s.strand || '';
+            document.getElementById('reg-voucher').value = s.voucher || 'NON-VOUCHER';
+            document.getElementById('reg-email').value = s.email || '';
+            document.getElementById('reg-date-enrolled').value = s.dateEnrolled || '';
+
+            // load grade sections
+            clearGradeSectionRows();
+            const gs = s.gradeSections || [];
+            if (gs.length === 0) addGradeSectionRow();
+            gs.forEach(g => addGradeSectionRow(g));
+            // scroll to top of form for convenience
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch (err) {
+            console.error("Load student error:", err);
+            alert("Failed to load student: " + (err.message || "Check console"));
+        }
+    };
+
     // ────────────────────────────────────────────────
     // TEACHER (Unchanged)
     // ────────────────────────────────────────────────
@@ -503,8 +726,9 @@
         alert("Grade Saved!");
         document.getElementById('grade-value').value = "";
     };
+
     // ────────────────────────────────────────────────
-    // FINANCE (Modified for Voucher logic)
+    // FINANCE (Modified for Voucher logic) - unchanged from previous modifications
     // ────────────────────────────────────────────────
     function refreshFinanceAssessment() {
         const container = document.getElementById('finance-assessment-list');
@@ -674,6 +898,7 @@
         alert("Payment Recorded!");
         document.getElementById('pay-amount').value = "";
     };
+
     // ────────────────────────────────────────────────
     // STUDENT (Unchanged)
     // ────────────────────────────────────────────────
@@ -733,6 +958,7 @@
         });
         alert("Request Sent!");
     };
+
     // ────────────────────────────────────────────────
     // GLOBAL (Unchanged)
     // ────────────────────────────────────────────────
@@ -749,8 +975,9 @@
     window.addFeeItem = addFeeItem;
     window.removeFeeItem = removeFeeItem;
     window.saveFeeBreakdown = saveFeeBreakdown;
+    window.addGradeSectionRow = addGradeSectionRow;
+    window.resetEnrollmentForm = resetEnrollmentForm;
+    window.loadStudentToForm = loadStudentToForm;
 </script>
 </body>
 </html>
- 
- 
