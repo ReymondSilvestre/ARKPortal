@@ -12,7 +12,7 @@
             --white: #ffffff; --border: #dfe6e9;
         }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: var(--bg); color: #333; }
-        nav { background: var(--primary); color: white; padding: 0.8rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
+        nav { background: var(--primary); color: white; padding: 0.8rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top:0; z-index:1000; }
         .role-nav-container { display: flex; align-items: center; gap: 20px; }
         .sub-nav { background: var(--white); border-bottom: 1px solid var(--border); padding: 10px 2rem; display: flex; gap: 15px; overflow-x: auto; }
         .sub-nav button { background: #eee; color: #555; font-size: 13px; padding: 6px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; flex-shrink: 0; }
@@ -42,6 +42,9 @@
         .grade-row { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
         .grade-row input { width: 45%; padding:8px; margin:0; }
         .muted { color:#666; font-size:13px; }
+        .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:2200; }
+        .modal { width:760px; max-width:95%; max-height:90vh; overflow:auto; border-radius:10px; }
+        .search-inline { display:flex; gap:10px; align-items:center; margin-bottom:10px; }
     </style>
 </head>
 <body>
@@ -123,7 +126,16 @@
                         <option value="H.E ICT">H.E ICT</option>
                         <option value="GAS">GAS</option>
                     </select>
-                    <input type="text" id="reg-voucher" placeholder="Voucher (e.g., NON-VOUCHER/PUB/ALS/ESC)" value="NON-VOUCHER">
+
+                    <!-- Voucher dropdown restored -->
+                    <select id="reg-voucher">
+                        <option value="NON-VOUCHER">NON-VOUCHER</option>
+                        <option value="PUB">PUB</option>
+                        <option value="ESC">ESC</option>
+                        <option value="ALS">ALS</option>
+                        <option value="OTHER">OTHER</option>
+                    </select>
+
                     <input type="text" id="reg-email" placeholder="Student's Google Email">
                     <input type="date" id="reg-date-enrolled" placeholder="Date Enrolled">
                 </div>
@@ -145,9 +157,17 @@
                 </div>
             </div>
         </div>
+
         <div id="masterlist-page" class="sub-view hidden">
             <div class="card">
                 <h3>Student Masterlist</h3>
+
+                <!-- Masterlist search box -->
+                <div class="search-inline">
+                    <input type="text" id="masterlist-search" placeholder="Search by LRN, Name, Email, Strand, Grade or Section..." onkeyup="filterMasterlist()" style="flex:1;">
+                    <button onclick="exportMasterlistCSV()" class="btn-outline">Export CSV</button>
+                </div>
+
                 <div style="overflow-x:auto;">
                     <table>
                         <thead>
@@ -167,6 +187,7 @@
                 </div>
             </div>
         </div>
+
         <div id="requests-page" class="sub-view hidden">
             <div class="card">
                 <h3>Pending Requests</h3>
@@ -294,6 +315,61 @@
         </div>
     </section>
 </div>
+
+<!-- Modal: Edit student from Masterlist -->
+<div id="edit-student-modal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:2100;">
+    <div class="card modal">
+        <h3>Edit Student</h3>
+        <div class="grid">
+            <input type="text" id="edit-lrn" placeholder="Learner Reference Number (LRN)">
+            <input type="text" id="edit-lname" placeholder="Last Name">
+            <input type="text" id="edit-fname" placeholder="First Name">
+            <input type="text" id="edit-mname" placeholder="Middle Name">
+            <input type="number" id="edit-age" placeholder="Age">
+            <input type="date" id="edit-birthdate" placeholder="Birthdate">
+            <input type="text" id="edit-address" placeholder="Address">
+            <input type="text" id="edit-contact" placeholder="Contact No.">
+            <input type="text" id="edit-emergency-name" placeholder="Emergency Contact Person">
+            <input type="text" id="edit-emergency-number" placeholder="Emergency Contact Number">
+            <select id="edit-strand">
+                <option value="">Select Strand</option>
+                <option value="ABM">ABM</option>
+                <option value="HUMSS">HUMSS</option>
+                <option value="H.E ICT">H.E ICT</option>
+                <option value="GAS">GAS</option>
+            </select>
+
+            <!-- Voucher dropdown in modal too -->
+            <select id="edit-voucher">
+                <option value="NON-VOUCHER">NON-VOUCHER</option>
+                <option value="PUB">PUB</option>
+                <option value="ESC">ESC</option>
+                <option value="ALS">ALS</option>
+                <option value="OTHER">OTHER</option>
+            </select>
+
+            <input type="text" id="edit-email" placeholder="Student's Google Email">
+            <input type="date" id="edit-date-enrolled" placeholder="Date Enrolled">
+        </div>
+
+        <div style="margin-top:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <strong>Grade & Section</strong>
+                <div>
+                    <button class="small-btn btn-main" onclick="addModalGradeSectionRow()">Add Grade/Section</button>
+                </div>
+            </div>
+            <div id="edit-grade-section-container" style="margin-top:8px;"></div>
+            <small class="muted">Edit grade & section entries for this student.</small>
+        </div>
+
+        <div style="margin-top:20px; display:flex; gap:10px; justify-content:flex-end;">
+            <button id="save-edit-student-btn" class="btn-main">Save Changes</button>
+            <button onclick="closeMasterlistModal()" class="btn-outline">Cancel</button>
+        </div>
+    </div>
+</div>
+
 <div id="fee-modal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:2000;">
     <div class="card" style="width:400px; padding:20px;">
         <h3>Edit Fee Breakdown for <span id="modal-student-name"></span></h3>
@@ -309,10 +385,12 @@
         </div>
     </div>
 </div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, addDoc, onSnapshot, orderBy, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
     const firebaseConfig = {
         apiKey: "AIzaSyBE3E0D0Z6M1Q-FyOi5AhxwZvShML9b8BM",
         authDomain: "arkportal-b8792.firebaseapp.com",
@@ -329,6 +407,7 @@
     let currentStudentId = null;
     let financeStudentsCache = [];
     let editingStudentId = null;
+    let editingMasterlistId = null;
 
     // Voucher Templates
     const VOUCHER_TEMPLATES = {
@@ -384,6 +463,33 @@
     function clearGradeSectionRows() {
         const container = document.getElementById('grade-section-container');
         container.innerHTML = '';
+    }
+
+    // Modal grade section functions (for masterlist edit)
+    function addModalGradeSectionRow(data = {}) {
+        const container = document.getElementById('edit-grade-section-container');
+        const div = document.createElement('div');
+        div.className = 'grade-row';
+        const gradeInput = document.createElement('input');
+        gradeInput.placeholder = 'Grade (e.g., 11)';
+        gradeInput.value = data.grade || '';
+        const sectionInput = document.createElement('input');
+        sectionInput.placeholder = 'Section (e.g., A)';
+        sectionInput.value = data.section || '';
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'btn-danger';
+        removeBtn.style.padding = '6px 8px';
+        removeBtn.innerText = 'X';
+        removeBtn.onclick = () => div.remove();
+        gradeInput.type = 'text';
+        sectionInput.type = 'text';
+        div.appendChild(gradeInput);
+        div.appendChild(sectionInput);
+        div.appendChild(removeBtn);
+        container.appendChild(div);
+    }
+    function clearModalGradeRows() {
+        document.getElementById('edit-grade-section-container').innerHTML = '';
     }
 
     // auth state
@@ -506,7 +612,7 @@
     };
 
     // ────────────────────────────────────────────────
-    // REGISTRAR (Extended: enrollment fields + edit/load)
+    // REGISTRAR (Extended: voucher dropdown + masterlist edit modal + search)
     // ────────────────────────────────────────────────
     function initRegistrar() {
         // masterlist - show students
@@ -516,7 +622,9 @@
                 const id = d.id;
                 const name = s.name || `${s.lastName || ''} ${s.firstName || ''}`.trim() || '—';
                 const gradeSections = (s.gradeSections || []).map(gs => `${gs.grade || ''} - ${gs.section || ''}`).join('<br>') || '-';
-                return `<tr>
+                // include data attributes to help searching
+                const searchable = `${s.lrn || ''} ${name} ${s.email || ''} ${s.strand || ''} ${gradeSections}`.toLowerCase();
+                return `<tr data-id="${id}" data-search="${searchable}">
                     <td>${s.lrn || '-'}</td>
                     <td><strong>${name}</strong><br><small>${s.lastName || ''}, ${s.firstName || ''} ${s.middleName || ''}</small></td>
                     <td>${s.email || '-'}</td>
@@ -526,7 +634,7 @@
                     <td>${s.dateEnrolled || '-'}</td>
                     <td>
                         <div class="action-btns">
-                            <button onclick="loadStudentToForm('${id}')" class="btn-info">Edit</button>
+                            <button onclick="openMasterlistEdit('${id}')" class="btn-info">Edit</button>
                             <button onclick="deleteUserAccount('${id}')" class="btn-danger">Remove</button>
                         </div>
                     </td>
@@ -700,6 +808,129 @@
         }
     };
 
+    // New: Open masterlist edit modal
+    window.openMasterlistEdit = async (id) => {
+        try {
+            const snap = await getDoc(doc(db, "users", id));
+            if (!snap.exists()) return alert("Student not found");
+            const s = snap.data();
+            editingMasterlistId = id;
+            document.getElementById('edit-lrn').value = s.lrn || '';
+            document.getElementById('edit-lname').value = s.lastName || '';
+            document.getElementById('edit-fname').value = s.firstName || '';
+            document.getElementById('edit-mname').value = s.middleName || '';
+            document.getElementById('edit-age').value = s.age || '';
+            document.getElementById('edit-birthdate').value = s.birthdate || '';
+            document.getElementById('edit-address').value = s.address || '';
+            document.getElementById('edit-contact').value = s.contact || '';
+            document.getElementById('edit-emergency-name').value = s.emergencyName || '';
+            document.getElementById('edit-emergency-number').value = s.emergencyNumber || '';
+            document.getElementById('edit-strand').value = s.strand || '';
+            document.getElementById('edit-voucher').value = s.voucher || 'NON-VOUCHER';
+            document.getElementById('edit-email').value = s.email || '';
+            document.getElementById('edit-date-enrolled').value = s.dateEnrolled || '';
+
+            // load grade sections into modal
+            clearModalGradeRows();
+            const gs = s.gradeSections || [];
+            if (gs.length === 0) addModalGradeSectionRow();
+            gs.forEach(g => addModalGradeSectionRow(g));
+
+            document.getElementById('edit-student-modal').classList.remove('hidden');
+        } catch (err) {
+            console.error("Open edit modal error:", err);
+            alert("Failed to open edit modal: " + (err.message || "Check console"));
+        }
+    };
+
+    window.closeMasterlistModal = () => {
+        editingMasterlistId = null;
+        document.getElementById('edit-student-modal').classList.add('hidden');
+    };
+
+    document.getElementById('save-edit-student-btn').onclick = async () => {
+        if (!editingMasterlistId) return alert("No student loaded");
+        const lrn = document.getElementById('edit-lrn').value.trim();
+        const lastName = document.getElementById('edit-lname').value.trim();
+        const firstName = document.getElementById('edit-fname').value.trim();
+        const middleName = document.getElementById('edit-mname').value.trim();
+        const age = document.getElementById('edit-age').value.trim();
+        const birthdate = document.getElementById('edit-birthdate').value;
+        const address = document.getElementById('edit-address').value.trim();
+        const contact = document.getElementById('edit-contact').value.trim();
+        const emergencyName = document.getElementById('edit-emergency-name').value.trim();
+        const emergencyNumber = document.getElementById('edit-emergency-number').value.trim();
+        const strand = document.getElementById('edit-strand').value;
+        const voucher = (document.getElementById('edit-voucher').value || 'NON-VOUCHER').toUpperCase();
+        const email = document.getElementById('edit-email').value.trim();
+        const dateEnrolled = document.getElementById('edit-date-enrolled').value || new Date().toLocaleDateString();
+
+        // collect grade sections from modal
+        const gsRows = document.querySelectorAll('#edit-grade-section-container .grade-row');
+        const gradeSections = [];
+        gsRows.forEach(r => {
+            const inputs = r.querySelectorAll('input');
+            const grade = (inputs[0] && inputs[0].value.trim()) || '';
+            const section = (inputs[1] && inputs[1].value.trim()) || '';
+            if (grade || section) gradeSections.push({ grade, section });
+        });
+
+        const displayName = `${lastName || ''}${lastName && (firstName || middleName) ? ', ' : ''}${firstName || ''} ${middleName || ''}`.trim();
+
+        try {
+            await updateDoc(doc(db, "users", editingMasterlistId), {
+                lrn,
+                lastName,
+                firstName,
+                middleName,
+                name: displayName || firstName || email,
+                email,
+                age: age ? Number(age) : null,
+                birthdate,
+                address,
+                contact,
+                emergencyName,
+                emergencyNumber,
+                strand,
+                gradeSections,
+                dateEnrolled,
+                voucher
+            });
+            alert("Student record updated.");
+            closeMasterlistModal();
+        } catch (err) {
+            console.error("Save edit error:", err);
+            alert("Failed to save changes: " + (err.message || "Check console"));
+        }
+    };
+
+    // masterlist search
+    window.filterMasterlist = () => {
+        const q = (document.getElementById('masterlist-search').value || '').toLowerCase().trim();
+        document.querySelectorAll('#masterlist-body tr').forEach(row => {
+            const search = row.dataset.search || '';
+            row.style.display = search.includes(q) ? '' : 'none';
+        });
+    };
+
+    // simple CSV export for masterlist if needed (exports what's currently in view)
+    window.exportMasterlistCSV = () => {
+        const rows = [['LRN','Name','Email','Strand','Grade & Section','Contact','Date Enrolled']];
+        document.querySelectorAll('#masterlist-body tr').forEach(tr => {
+            if (tr.style.display === 'none') return; // skip filtered out
+            const cols = Array.from(tr.querySelectorAll('td')).map(td => td.innerText.replace(/\n/g, ' / '));
+            rows.push(cols);
+        });
+        const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'masterlist.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
     // ────────────────────────────────────────────────
     // TEACHER (Unchanged)
     // ────────────────────────────────────────────────
@@ -727,7 +958,7 @@
         document.getElementById('grade-value').value = "";
     };
 
-    // ────────────────────────────────────────────────
+    // ───────────────────���────────────────────────────
     // FINANCE (Modified for Voucher logic) - unchanged from previous modifications
     // ────────────────────────────────────────────────
     function refreshFinanceAssessment() {
@@ -978,6 +1209,11 @@
     window.addGradeSectionRow = addGradeSectionRow;
     window.resetEnrollmentForm = resetEnrollmentForm;
     window.loadStudentToForm = loadStudentToForm;
+    window.openMasterlistEdit = openMasterlistEdit;
+    window.addModalGradeSectionRow = addModalGradeSectionRow;
+    window.closeMasterlistModal = closeMasterlistModal;
+    window.exportMasterlistCSV = exportMasterlistCSV;
+    window.filterMasterlist = filterMasterlist;
 </script>
 </body>
 </html>
