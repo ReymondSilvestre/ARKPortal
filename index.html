@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ark Portal - SMS Pro Elite</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Ark Portal - SMS Pro Elite (Enhanced)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
@@ -77,6 +77,7 @@
     <div id="finance-menu" class="sub-nav hidden">
         <button onclick="showSubPage('finance', 'collections-page', this)" class="active">Collect Payment</button>
         <button onclick="showSubPage('finance', 'assessment-page', this)">Fee Assessments</button>
+        <button onclick="showSubPage('finance', 'voucher-templates-page', this)">Voucher Templates</button>
         <button onclick="showSubPage('finance', 'history-page', this)">Payment History</button>
     </div>
     <div id="student-menu" class="sub-nav hidden">
@@ -162,9 +163,12 @@
             <div class="card">
                 <h3>Student Masterlist</h3>
 
-                <!-- Masterlist search box -->
+                <!-- Masterlist search box + section filter -->
                 <div class="search-inline">
                     <input type="text" id="masterlist-search" placeholder="Search by LRN, Name, Email, Strand, Grade or Section..." onkeyup="filterMasterlist()" style="flex:1;">
+                    <select id="masterlist-section-filter" style="width:220px;" onchange="filterMasterlist()">
+                        <option value="">All Sections</option>
+                    </select>
                     <button onclick="exportMasterlistCSV()" class="btn-outline">Export CSV</button>
                 </div>
 
@@ -197,8 +201,14 @@
         <div id="schedule-page" class="sub-view hidden">
             <div class="card">
                 <h3>Broadcast Schedule</h3>
-                <input type="text" id="sched-img-input" placeholder="Paste Image URL here">
-                <button id="update-sched-btn" class="btn-main">Update Schedule</button>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <input type="file" id="sched-file-input">
+                    <select id="sched-target">
+                        <option value="default">All (default)</option>
+                    </select>
+                    <button id="update-sched-btn" class="btn-main">Upload & Post Schedule</button>
+                </div>
+                <small class="muted">You can upload a schedule image (from desktop) and assign it to a specific Grade - Section, or to All.</small>
             </div>
         </div>
     </section>
@@ -207,9 +217,25 @@
             <div class="card">
                 <h3>Subject: <span id="assigned-subject-title" style="color:var(--accent)"></span></h3>
                 <div class="grid">
-                    <select id="grade-student-select"></select>
-                    <input type="number" id="grade-value" placeholder="Enter Grade">
-                    <button id="save-grade-btn" class="btn-main">Post Grade</button>
+                    <div>
+                        <div style="display:flex; gap:8px; margin-bottom:8px;">
+                            <select id="grade-student-select"></select>
+                            <input type="number" id="grade-value" placeholder="Enter Grade">
+                            <button id="save-grade-btn" class="btn-main">Post Grade</button>
+                        </div>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <input type="text" id="teacher-filter-student" placeholder="Filter by student name/email..." onkeyup="refreshTeacherGradeTable()">
+                            <select id="teacher-filter-section" onchange="refreshTeacherGradeTable()">
+                                <option value="">All Sections</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top:12px;">
+                    <table>
+                        <thead><tr><th>Student</th><th>Grade</th><th>Date</th><th>Actions</th></tr></thead>
+                        <tbody id="teacher-grade-table"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -220,7 +246,12 @@
                 <h3>Collect Payment</h3>
                 <div class="grid">
                     <div>
-                        <select id="pay-student-select"></select>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <select id="pay-student-select"></select>
+                            <select id="pay-section-filter" style="width:180px;">
+                                <option value="">Filter Section</option>
+                            </select>
+                        </div>
                         <input type="number" id="pay-amount" placeholder="Amount">
                         <select id="pay-category">
                             <option value="Tuition Fee">Tuition Fee</option>
@@ -238,7 +269,12 @@
             <div class="card">
                 <h3>Detailed Fee Assessment</h3>
                 <p><small>Update specific fee components for each student. The total will update automatically.</small></p>
-                <input type="text" id="finance-assessment-search" placeholder="Filter by Student Name or Email..." onkeyup="filterAssessment()" style="margin-bottom: 15px;">
+                <div style="display:flex; gap:8px; align-items:center; margin-bottom: 15px;">
+                    <input type="text" id="finance-assessment-search" placeholder="Filter by Student Name or Email..." onkeyup="filterAssessment()" style="flex:1;">
+                    <select id="finance-section-filter" style="width:220px;" onchange="filterAssessment()">
+                        <option value="">All Sections</option>
+                    </select>
+                </div>
                 <div style="overflow-x:auto;">
                     <table>
                         <thead>
@@ -254,6 +290,34 @@
                 </div>
             </div>
         </div>
+
+        <div id="voucher-templates-page" class="sub-view hidden">
+            <div class="card">
+                <h3>Voucher Templates (Editable)</h3>
+                <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+                    <input id="new-voucher-code" placeholder="Voucher Code (e.g., PUB)">
+                    <button onclick="createEmptyVoucher()" class="btn-main">Create Template</button>
+                </div>
+                <div id="voucher-templates-list"></div>
+
+                <!-- template editor modal like area -->
+                <div id="voucher-editor" class="hidden" style="margin-top:10px;">
+                    <h4 id="voucher-editor-title"></h4>
+                    <div id="voucher-fee-list"></div>
+                    <div style="display:flex; gap:8px; margin-top:8px;">
+                        <input id="voucher-new-fee-name" placeholder="Fee name">
+                        <input id="voucher-new-fee-amount" type="number" placeholder="Amount">
+                        <button onclick="voucherAddFee()" class="btn-main">Add Fee</button>
+                    </div>
+                    <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px;">
+                        <button onclick="applyVoucherToStudents()" class="btn-outline">Apply to Students</button>
+                        <button id="save-voucher-btn" class="btn-main" onclick="saveVoucherTemplate()">Save Template</button>
+                        <button onclick="cancelVoucherEdit()" class="btn-outline">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="history-page" class="sub-view hidden">
             <div class="card">
                 <h3>Payment History</h3>
@@ -281,6 +345,9 @@
                 <div class="card">
                     <h3>Student Information</h3>
                     <div id="stu-info-display"></div>
+                    <div style="display:flex; gap:10px; margin-top:8px;">
+                        <button id="download-enroll-json" class="btn-outline" onclick="downloadEnrollmentJSON()">Download Enrollment JSON</button>
+                    </div>
                 </div>
                 <div class="card" style="background:var(--primary); color:white; text-align:center;">
                     <small>Outstanding Balance</small>
@@ -409,30 +476,8 @@
     let editingStudentId = null;
     let editingMasterlistId = null;
 
-    // Voucher Templates
-    const VOUCHER_TEMPLATES = {
-        'PUB': {
-            'tuition': 0,
-            'misc fee': 900,
-            'intrams fee': 200,
-            'uniform': 0,
-            'p.e uniform': 0
-        },
-        'NON-VOUCHER': {
-            'tuition': 10000,
-            'misc fee': 900,
-            'intrams fee': 200,
-            'uniform': 1000,
-            'p.e uniform': 1000
-        },
-        'ESC': {
-            'tuition': 7000,
-            'misc fee': 900,
-            'intrams fee': 200,
-            'uniform': 1000,
-            'p.e uniform': 1000
-        }
-    };
+    // Voucher Templates - local cache loaded from Firestore
+    let voucherTemplatesCache = {};
 
     // Initialize grade-section container with one row
     function addGradeSectionRow(data = {}) {
@@ -503,7 +548,7 @@
                 if (preSnap.exists()) {
                     const data = preSnap.data();
                     await setDoc(userRef, { ...data, uid: user.uid });
-                    await deleteDoc(preCreatedRef);
+                    try { await deleteDoc(preCreatedRef); } catch(e){ /* ignore */ }
                     snap = await getDoc(userRef);
                 }
             }
@@ -517,6 +562,8 @@
             currentUser = snap.data();
             currentUser.uid = user.uid;
             renderView(currentUser);
+            // Load voucher templates on auth to populate UI caches
+            loadVoucherTemplates();
         } else {
             document.getElementById('login-btn').classList.remove('hidden');
             document.getElementById('user-info').classList.add('hidden');
@@ -612,19 +659,18 @@
     };
 
     // ────────────────────────────────────────────────
-    // REGISTRAR (Extended: voucher dropdown + masterlist edit modal + search)
+    // REGISTRAR (Extended: voucher dropdown + masterlist edit modal + search + schedule upload)
     // ────────────────────────────────────────────────
     function initRegistrar() {
         // masterlist - show students
         onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
-            document.getElementById('masterlist-body').innerHTML = snap.docs.map(d => {
-                const s = d.data();
-                const id = d.id;
+            const students = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            document.getElementById('masterlist-body').innerHTML = students.map(s => {
+                const id = s.id;
                 const name = s.name || `${s.lastName || ''} ${s.firstName || ''}`.trim() || '—';
                 const gradeSections = (s.gradeSections || []).map(gs => `${gs.grade || ''} - ${gs.section || ''}`).join('<br>') || '-';
-                // include data attributes to help searching
                 const searchable = `${s.lrn || ''} ${name} ${s.email || ''} ${s.strand || ''} ${gradeSections}`.toLowerCase();
-                return `<tr data-id="${id}" data-search="${searchable}">
+                return `<tr data-id="${id}" data-search="${searchable}" data-sections="${(s.gradeSections||[]).map(gs=>`${gs.grade}-${gs.section}`).join('|')}">
                     <td>${s.lrn || '-'}</td>
                     <td><strong>${name}</strong><br><small>${s.lastName || ''}, ${s.firstName || ''} ${s.middleName || ''}</small></td>
                     <td>${s.email || '-'}</td>
@@ -636,10 +682,14 @@
                         <div class="action-btns">
                             <button onclick="openMasterlistEdit('${id}')" class="btn-info">Edit</button>
                             <button onclick="deleteUserAccount('${id}')" class="btn-danger">Remove</button>
+                            <button onclick="loadStudentToForm('${id}')" class="btn-outline">Load to Enroll</button>
                         </div>
                     </td>
                 </tr>`;
             }).join('');
+
+            // populate sections filter for masterlist and schedule target
+            populateSectionFilters(students);
         });
 
         // requests
@@ -651,15 +701,26 @@
                 </div>`).join('');
         });
 
-        // schedule update
+        // schedule upload handlers
+        const fileInput = document.getElementById('sched-file-input');
+        const targetSelect = document.getElementById('sched-target');
         document.getElementById('update-sched-btn').onclick = async () => {
-            const url = document.getElementById('sched-img-input').value.trim();
-            if (url) {
-                await setDoc(doc(db, "settings", "schedule"), { imgUrl: url });
-                alert('Schedule updated!');
-            } else {
-                alert('Please enter a valid image URL');
-            }
+            const file = fileInput.files[0];
+            if (!file) return alert('Please select an image file to upload.');
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const dataUrl = e.target.result;
+                const target = targetSelect.value || 'default';
+                // save into settings/schedule as object with keys per target
+                const settingsRef = doc(db, "settings", "schedule");
+                const snap = await getDoc(settingsRef);
+                const current = snap.exists() ? snap.data() : {};
+                current[target] = { imgUrl: dataUrl, uploadedBy: currentUser.email || currentUser.name || 'system', timestamp: new Date() };
+                await setDoc(settingsRef, current, { merge: true });
+                alert('Schedule uploaded and posted for ' + target);
+                fileInput.value = '';
+            };
+            reader.readAsDataURL(file);
         };
 
         // ensure grade section container has one row when opening
@@ -679,6 +740,42 @@
             alert("Document released!");
         }
     };
+
+    // helper to collect unique grade-section keys and populate selects used for filters & schedule targets
+    function populateSectionFilters(studentList) {
+        const set = new Set();
+        studentList.forEach(s => {
+            (s.gradeSections || []).forEach(gs => {
+                if (gs.grade && gs.section) set.add(`${gs.grade}-${gs.section}`);
+            });
+        });
+        const arr = Array.from(set).sort();
+        const masterFilter = document.getElementById('masterlist-section-filter');
+        const schedTarget = document.getElementById('sched-target');
+        const financeSectionFilter = document.getElementById('finance-section-filter');
+        const teacherFilter = document.getElementById('teacher-filter-section');
+        const paySectionFilter = document.getElementById('pay-section-filter');
+
+        [masterFilter, schedTarget, financeSectionFilter, teacherFilter, paySectionFilter].forEach(el => {
+            if (!el) return;
+            const prev = el.value;
+            el.innerHTML = '<option value="">All Sections</option>';
+            arr.forEach(k => {
+                const opt = document.createElement('option');
+                opt.value = k;
+                opt.text = k.replace('-', ' - ');
+                el.appendChild(opt);
+            });
+            // for schedule target add default option label
+            if (el === schedTarget) {
+                const defaultOpt = document.createElement('option');
+                defaultOpt.value = 'default';
+                defaultOpt.text = 'All (default)';
+                el.insertBefore(defaultOpt, el.firstChild);
+            }
+            try { el.value = prev || ''; } catch(e){}
+        });
+    }
 
     // enroll/create or update
     document.getElementById('enroll-btn').onclick = async () => {
@@ -715,6 +812,15 @@
         // prepare name and doc content
         const displayName = `${lastName || ''}${lastName && (firstName || middleName) ? ', ' : ''}${firstName || ''} ${middleName || ''}`.trim();
         try {
+            // compute initial feeBreakdown based on voucher template if new and no existing breakdown
+            let feeBreakdown = {};
+            let totalAssessment = 0;
+            const template = voucherTemplatesCache[voucher] || null;
+            if (template) {
+                feeBreakdown = {...template};
+                totalAssessment = Object.values(feeBreakdown).reduce((a,b)=>a+Number(b||0),0);
+            }
+
             await setDoc(doc(db, "users", docId), {
                 lrn,
                 lastName,
@@ -733,8 +839,8 @@
                 gradeSections,
                 dateEnrolled,
                 googleAccount: email,
-                totalAssessment: 0,
-                feeBreakdown: {},
+                totalAssessment,
+                feeBreakdown,
                 voucher
             }, { merge: true });
 
@@ -904,12 +1010,19 @@
         }
     };
 
-    // masterlist search
+    // masterlist search + section filter
     window.filterMasterlist = () => {
         const q = (document.getElementById('masterlist-search').value || '').toLowerCase().trim();
+        const sectionFilter = (document.getElementById('masterlist-section-filter').value || '').toLowerCase();
         document.querySelectorAll('#masterlist-body tr').forEach(row => {
             const search = row.dataset.search || '';
-            row.style.display = search.includes(q) ? '' : 'none';
+            const sections = row.dataset.sections || '';
+            const matchesQ = search.includes(q);
+            const matchesSection = !sectionFilter || sections.includes(sectionFilter.replace('-',''));
+            row.style.display = (matchesQ && (sectionFilter ? sections.includes(sectionFilter) : true)) ? '' : 'none';
+            // simplified condition: if no section filter, only q matters; if section selected both must match
+            const show = (search.includes(q)) && (!sectionFilter || sections.includes(sectionFilter));
+            row.style.display = show ? '' : 'none';
         });
     };
 
@@ -932,19 +1045,84 @@
     };
 
     // ────────────────────────────────────────────────
-    // TEACHER (Unchanged)
+    // TEACHER (Enhanced: filter & edit/delete grades)
     // ────────────────────────────────────────────────
-    function initTeacher(user) {
+    async function initTeacher(user) {
         document.getElementById('assigned-subject-title').innerText = user.subject || "Not Assigned";
+
+        // populate students select and section filter
         onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
-            document.getElementById('grade-student-select').innerHTML = snap.docs.map(d => {
-                const s = d.data();
-                return `<option value="${s.email}">${s.name || s.email}</option>`;
-            }).join('');
+            const students = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            document.getElementById('grade-student-select').innerHTML = students.map(s => `<option value="${s.email}">${s.name || s.email}</option>`).join('');
+            // populate teacher section filter
+            populateSectionFilters(students);
+            refreshTeacherGradeTable();
+        });
+
+        // watch grades for current subject
+        onSnapshot(query(collection(db, "grades"), where("subject", "==", user.subject || "__no_subject__")), (snap) => {
+            // keep a local list in a simple way by re-rendering
+            refreshTeacherGradeTable(snap.docs.map(d => ({ id: d.id, ...d.data() })));
         });
     }
+
+    // refresh teacher grade table with optional preloaded list
+    async function refreshTeacherGradeTable(preloaded = null) {
+        const subject = currentUser?.subject;
+        const filterQ = (document.getElementById('teacher-filter-student')?.value || '').toLowerCase();
+        const sectionFilter = (document.getElementById('teacher-filter-section')?.value || '') || '';
+        // fetch grades by subject if not provided
+        let grades = preloaded;
+        if (!grades) {
+            const snap = await getDocs(query(collection(db, "grades"), where("subject", "==", subject || "__no_subject__")));
+            grades = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        }
+        // optionally join each grade with student's sections (we'll query user by email)
+        const studentsByEmail = {};
+        const emailsToQuery = Array.from(new Set(grades.map(g => g.studentEmail)));
+        if (emailsToQuery.length) {
+            const userSnaps = await getDocs(query(collection(db, "users"), where("email", "in", emailsToQuery.length>10?emailsToQuery.slice(0,10):emailsToQuery)));
+            userSnaps.forEach(u => { studentsByEmail[u.data().email] = u.data(); });
+        }
+        document.getElementById('teacher-grade-table').innerHTML = grades.map(g => {
+            const student = studentsByEmail[g.studentEmail] || {};
+            const studentName = student.name || g.studentEmail;
+            const studentSections = (student.gradeSections || []).map(gs=>`${gs.grade}-${gs.section}`).join(', ');
+            const date = (g.timestamp && g.timestamp.toDate) ? g.timestamp.toDate().toLocaleDateString() : (g.date || '');
+            const matchesFilter = (!filterQ || `${studentName} ${g.studentEmail}`.toLowerCase().includes(filterQ));
+            const matchesSection = (!sectionFilter || studentSections.includes(sectionFilter));
+            if (!matchesFilter || !matchesSection) return '';
+            return `<tr data-id="${g.id}">
+                <td>${studentName}<br><small>${g.studentEmail}${studentSections ? ' • ' + studentSections : ''}</small></td>
+                <td>${g.grade}</td>
+                <td>${date}</td>
+                <td class="action-btns">
+                    <button onclick="editGrade('${g.id}')" class="btn-info">Edit</button>
+                    <button onclick="deleteGrade('${g.id}')" class="btn-danger">Delete</button>
+                </td>
+            </tr>`;
+        }).join('') || '<tr><td colspan="4">No grades yet</td></tr>';
+    }
+
+    window.editGrade = async (id) => {
+        const snap = await getDoc(doc(db, "grades", id));
+        if (!snap.exists()) return alert("Grade not found");
+        const g = snap.data();
+        const newVal = prompt("Edit Grade value:", g.grade);
+        if (newVal !== null && newVal.trim() !== '') {
+            await updateDoc(doc(db, "grades", id), { grade: newVal, editedAt: new Date() });
+            alert("Grade updated.");
+        }
+    };
+    window.deleteGrade = async (id) => {
+        if (confirm("Delete this grade?")) {
+            await deleteDoc(doc(db, "grades", id));
+            alert("Grade removed.");
+        }
+    };
+
     document.getElementById('save-grade-btn').onclick = async () => {
-        if (!currentUser.subject) return alert("No assigned subject!");
+        if (!currentUser?.subject) return alert("No assigned subject!");
         const studentEmail = document.getElementById('grade-student-select').value;
         const grade = document.getElementById('grade-value').value.trim();
         if (!studentEmail || !grade) return alert("Select student and enter grade");
@@ -958,8 +1136,9 @@
         document.getElementById('grade-value').value = "";
     };
 
-    // ───────────────────���────────────────────────────
-    // FINANCE (Modified for Voucher logic) - unchanged from previous modifications
+
+    // ────────────────────────────────────────────────
+    // FINANCE (Modified for Voucher logic + templates + filters)
     // ────────────────────────────────────────────────
     function refreshFinanceAssessment() {
         const container = document.getElementById('finance-assessment-list');
@@ -971,7 +1150,7 @@
                     <span>${k.charAt(0).toUpperCase() + k.slice(1)}:</span> ₱${Number(v).toLocaleString()}</div>`)
                 .join('') || '<small style="color:#999">No fees set</small>';
             return `
-            <tr>
+            <tr data-id="${s.id}" data-sections="${(s.gradeSections||[]).map(gs=>`${gs.grade}-${gs.section}`).join('|')}">
                 <td>
                     <strong>${s.name || '—'}</strong><br>
                     <small>${s.email}</small><br>
@@ -983,6 +1162,7 @@
             </tr>`;
         }).join('');
     }
+
     function initFinance() {
         onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => {
             financeStudentsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -990,6 +1170,8 @@
                 .map(s => `<option value="${s.email}">${s.name || s.email}</option>`)
                 .join('');
             refreshFinanceAssessment();
+            // populate section filters
+            populateSectionFilters(financeStudentsCache);
         });
         onSnapshot(query(collection(db, "payments"), orderBy("timestamp", "desc")), (snap) => {
             document.getElementById('finance-log').innerHTML = snap.docs.map(d => {
@@ -1007,17 +1189,170 @@
                 </tr>`;
             }).join('');
         });
+
+        // load voucher templates list
+        loadVoucherTemplatesUI();
     }
-    window.openFeeModal = (id) => {
-        const student = financeStudentsCache.find(s => s.id === id);
+
+    // voucher templates functions
+    async function loadVoucherTemplates() {
+        const snap = await getDocs(collection(db, "voucher_templates"));
+        voucherTemplatesCache = {};
+        snap.forEach(d => {
+            voucherTemplatesCache[d.id] = d.data().fees || {};
+        });
+        // If defaults are missing, ensure PUB, NON-VOUCHER, ESC exist in cache so other flows work
+        if (!voucherTemplatesCache['PUB']) voucherTemplatesCache['PUB'] = { tuition:0, "misc fee":900, "intrams fee":200, uniform:0, "p.e uniform":0 };
+        if (!voucherTemplatesCache['NON-VOUCHER']) voucherTemplatesCache['NON-VOUCHER'] = { tuition:10000, "misc fee":900, "intrams fee":200, uniform:1000, "p.e uniform":1000 };
+        if (!voucherTemplatesCache['ESC']) voucherTemplatesCache['ESC'] = { tuition:7000, "misc fee":900, "intrams fee":200, uniform:1000, "p.e uniform":1000 };
+        // update UI if present
+        loadVoucherTemplatesUI();
+    }
+
+    // Render voucher templates UI list
+    function loadVoucherTemplatesUI() {
+        const container = document.getElementById('voucher-templates-list');
+        if (!container) return;
+        const keys = Object.keys(voucherTemplatesCache).sort();
+        container.innerHTML = keys.map(k => {
+            const t = voucherTemplatesCache[k];
+            const display = Object.entries(t).map(([n,v])=>`${n}: ₱${Number(v).toLocaleString()}`).join(' | ');
+            return `<div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:10px;">
+                <div><strong>${k}</strong><div style="font-size:12px; color:#666;">${display}</div></div>
+                <div style="display:flex; gap:8px;">
+                    <button onclick="startEditVoucher('${k}')" class="btn-info">Edit</button>
+                    <button onclick="deleteVoucherTemplate('${k}')" class="btn-danger">Delete</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function createEmptyVoucher(){
+        const code = (document.getElementById('new-voucher-code').value || '').trim().toUpperCase();
+        if(!code) return alert('Enter a voucher code');
+        voucherTemplatesCache[code] = {};
+        startEditVoucher(code);
+        document.getElementById('new-voucher-code').value = '';
+    }
+
+    function startEditVoucher(code){
+        const editor = document.getElementById('voucher-editor');
+        document.getElementById('voucher-editor-title').innerText = `Editing: ${code}`;
+        // load into editor area
+        const fees = {...(voucherTemplatesCache[code] || {})};
+        renderVoucherFeeList(fees);
+        editor.dataset.code = code;
+        editor.classList.remove('hidden');
+    }
+
+    function cancelVoucherEdit(){
+        const editor = document.getElementById('voucher-editor');
+        editor.dataset.code = '';
+        editor.classList.add('hidden');
+        loadVoucherTemplatesUI();
+    }
+
+    function renderVoucherFeeList(fees){
+        const list = document.getElementById('voucher-fee-list');
+        list.innerHTML = Object.entries(fees).map(([name, amt]) => `
+            <div class="breakdown-item">
+                <span class="fee-tag">${name.charAt(0).toUpperCase()+name.slice(1)}</span>
+                <input type="number" value="${Number(amt)}" data-name="${name.toLowerCase()}">
+                <button onclick="voucherRemoveFee(this)" class="btn-danger" style="padding:2px 6px;">X</button>
+            </div>
+        `).join('') || '<p style="color:#999">No fees yet. Add below.</p>';
+    }
+
+    function voucherAddFee(){
+        const name = (document.getElementById('voucher-new-fee-name').value || '').trim().toLowerCase();
+        const amount = Number(document.getElementById('voucher-new-fee-amount').value || 0);
+        if(!name || isNaN(amount)) return alert('Enter fee name and amount');
+        const list = document.getElementById('voucher-fee-list');
+        if(list.querySelector('p')) list.innerHTML = '';
+        const div = document.createElement('div');
+        div.className = 'breakdown-item';
+        div.innerHTML = `<span class="fee-tag">${name.charAt(0).toUpperCase() + name.slice(1)}</span>
+            <input type="number" value="${amount}" data-name="${name}">
+            <button onclick="voucherRemoveFee(this)" class="btn-danger" style="padding:2px 6px;">X</button>`;
+        list.appendChild(div);
+        document.getElementById('voucher-new-fee-name').value='';
+        document.getElementById('voucher-new-fee-amount').value='';
+    }
+
+    function voucherRemoveFee(btn){
+        btn.parentElement.remove();
+        if(document.getElementById('voucher-fee-list').children.length === 0) document.getElementById('voucher-fee-list').innerHTML = '<p style="color:#999">No fees yet. Add below.</p>';
+    }
+
+    async function saveVoucherTemplate(){
+        const code = document.getElementById('voucher-editor').dataset.code;
+        if(!code) return alert('No voucher loaded');
+        const inputs = document.querySelectorAll('#voucher-fee-list .breakdown-item input');
+        const fees = {};
+        inputs.forEach(i => {
+            const name = i.dataset.name;
+            const amt = Number(i.value) || 0;
+            if(name) fees[name] = amt;
+        });
+        // save to firestore
+        await setDoc(doc(db, "voucher_templates", code), { fees }, { merge: true });
+        voucherTemplatesCache[code] = fees;
+        alert('Voucher template saved.');
+        cancelVoucherEdit();
+        loadVoucherTemplatesUI();
+    }
+
+    async function deleteVoucherTemplate(code){
+        if(!confirm(`Delete voucher template ${code}?`)) return;
+        try{
+            await deleteDoc(doc(db, "voucher_templates", code));
+        }catch(e){ /* ignore not exists */ }
+        delete voucherTemplatesCache[code];
+        loadVoucherTemplatesUI();
+    }
+
+    // apply voucher template to students who have that voucher code
+    async function applyVoucherToStudents(){
+        const code = document.getElementById('voucher-editor').dataset.code;
+        if(!code) return alert('No voucher loaded');
+        if(!voucherTemplatesCache[code]) return alert('Template not in cache');
+        if(!confirm(`Apply template ${code} to all students with voucher ${code}? This will overwrite feeBreakdown and totalAssessment for those students.`)) return;
+        // find students with voucher code
+        const snap = await getDocs(query(collection(db, "users"), where("role","==","student")));
+        const toUpdate = [];
+        snap.forEach(d=>{
+            const s = d.data();
+            if((s.voucher||'').toUpperCase() === code.toUpperCase()){
+                const fees = {...voucherTemplatesCache[code]};
+                const total = Object.values(fees).reduce((a,b)=>a+Number(b||0),0);
+                toUpdate.push({ id: d.id, fees, total });
+            }
+        });
+        // update each
+        for(const u of toUpdate){
+            await updateDoc(doc(db, "users", u.id), { feeBreakdown: u.fees, totalAssessment: u.total });
+        }
+        alert(`Applied template to ${toUpdate.length} students.`);
+        // refresh local cache display
+        const snap2 = await getDocs(query(collection(db, "users"), where("role", "==", "student")));
+        financeStudentsCache = snap2.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshFinanceAssessment();
+    }
+
+    // open fee modal for a student (uses voucher template if student has no breakdown)
+    window.openFeeModal = async (id) => {
+        // reload cache if empty
+        if(!financeStudentsCache.length){
+            const snap = await getDocs(query(collection(db, "users"), where("role","==","student")));
+            financeStudentsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        }
+        const student = financeStudentsCache.find(s => s.id === id) || (await (await getDoc(doc(db,"users",id))).data());
         if (!student) return;
         currentStudentId = id;
         document.getElementById('modal-student-name').innerText = (student.name || student.email) + ` (${student.voucher || 'No Voucher'})`;
-        // Logic: Use existing breakdown if it has items, otherwise auto-load from template based on voucher
         let fb = student.feeBreakdown || {};
-       
-        if (Object.keys(fb).length === 0 && student.voucher && VOUCHER_TEMPLATES[student.voucher]) {
-            fb = VOUCHER_TEMPLATES[student.voucher];
+        if (Object.keys(fb).length === 0 && student.voucher && voucherTemplatesCache[student.voucher]) {
+            fb = {...voucherTemplatesCache[student.voucher]};
         }
         document.getElementById('fee-list').innerHTML = Object.entries(fb).map(([key, val]) => `
             <div class="breakdown-item">
@@ -1037,7 +1372,6 @@
         const amountInput = document.getElementById('new-fee-amount');
         const name = nameInput.value.trim().toLowerCase();
         const amount = amountInput.value.trim();
-       
         if (!name || !amount || isNaN(amount)) return alert('Enter valid fee name and amount');
         const feeList = document.getElementById('fee-list');
         if (feeList.querySelector('p')) feeList.innerHTML = '';
@@ -1049,7 +1383,6 @@
             <button onclick="removeFeeItem(this)" class="btn-danger" style="padding:2px 6px;">X</button>
         `;
         feeList.appendChild(div);
-       
         nameInput.value = '';
         amountInput.value = '';
     };
@@ -1082,6 +1415,9 @@
             });
             alert("Fee breakdown updated successfully!");
             closeModal();
+            // refresh cache and UI
+            const snap = await getDocs(query(collection(db, "users"), where("role", "==", "student")));
+            financeStudentsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             refreshFinanceAssessment();
         } catch (err) {
             console.error("Save fee error:", err);
@@ -1093,8 +1429,13 @@
     };
     window.filterAssessment = () => {
         const q = document.getElementById('finance-assessment-search').value.toLowerCase();
+        const sectionFilter = (document.getElementById('finance-section-filter').value || '').toLowerCase();
         document.querySelectorAll('#finance-assessment-list tr').forEach(row => {
-            row.style.display = row.innerText.toLowerCase().includes(q) ? '' : 'none';
+            const txt = row.innerText.toLowerCase();
+            const sections = row.dataset.sections || '';
+            const matchesQ = txt.includes(q);
+            const matchesSection = !sectionFilter || sections.includes(sectionFilter);
+            row.style.display = (matchesQ && matchesSection) ? '' : 'none';
         });
     };
     window.filterFinanceHistory = () => {
@@ -1131,14 +1472,37 @@
     };
 
     // ────────────────────────────────────────────────
-    // STUDENT (Unchanged)
+    // STUDENT (Expanded: show all enrollment data + schedule per-section)
     // ────────────────────────────────────────────────
     async function initStudent(user) {
         onSnapshot(doc(db, "users", user.uid), async (s) => {
             if (!s.exists()) return;
             const d = s.data();
-            document.getElementById('stu-info-display').innerHTML = `
-                <p><strong>${d.name || '—'}</strong><br>${d.email}<br>LRN: ${d.lrn || 'N/A'}</p>`;
+            // build full enrollment display with all fields
+            const gradeSections = (d.gradeSections || []).map(gs => `${gs.grade || ''} - ${gs.section || ''}`).join('<br>') || '-';
+            const enrollmentHtml = `
+                <p><strong>${d.name || '—'}</strong><br>${d.email}<br>LRN: ${d.lrn || 'N/A'}</p>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <div style="min-width:180px;"><strong>Last Name</strong><div>${d.lastName || '-'}</div></div>
+                    <div style="min-width:180px;"><strong>First Name</strong><div>${d.firstName || '-'}</div></div>
+                    <div style="min-width:180px;"><strong>Middle Name</strong><div>${d.middleName || '-'}</div></div>
+                    <div style="min-width:120px;"><strong>Age</strong><div>${d.age || '-'}</div></div>
+                    <div style="min-width:160px;"><strong>Birthdate</strong><div>${d.birthdate || '-'}</div></div>
+                </div>
+                <div style="margin-top:8px;">
+                    <div><strong>Address</strong><div>${d.address || '-'}</div></div>
+                    <div><strong>Contact</strong><div>${d.contact || '-'}</div></div>
+                    <div><strong>Emergency Contact</strong><div>${d.emergencyName || '-'} • ${d.emergencyNumber || '-'}</div></div>
+                    <div><strong>Strand</strong><div>${d.strand || '-'}</div></div>
+                    <div><strong>Voucher</strong><div>${d.voucher || '-'}</div></div>
+                    <div><strong>Grade & Section</strong><div>${gradeSections}</div></div>
+                    <div><strong>Date Enrolled</strong><div>${d.dateEnrolled || '-'}</div></div>
+                    <div><strong>Google Account</strong><div>${d.googleAccount || '-'}</div></div>
+                </div>
+            `;
+            document.getElementById('stu-info-display').innerHTML = enrollmentHtml;
+
+            // fees & balance display
             const fb = d.feeBreakdown || {};
             document.getElementById('stu-breakdown-display').innerHTML = `
                 <div style="font-weight:bold; margin-bottom:5px;">Fee Breakdown:</div>
@@ -1146,13 +1510,14 @@
                     <div style="display:flex; justify-content:space-between;">
                         <span>${k.charAt(0).toUpperCase() + k.slice(1)}:</span>
                         <span>₱${Number(v).toLocaleString()}</span>
-                    </div>`).join('')}
+                    </div>`).join('') || '<div style="color:#999">No fees set</div>'}
                 <hr style="opacity:0.2">
                 <div style="display:flex; justify-content:space-between; font-weight:bold;">
                     <span>Total Required:</span>
                     <span>₱${Number(d.totalAssessment || 0).toLocaleString()}</span>
                 </div>
             `;
+            // payment history and balance
             const pSnap = await getDocs(query(collection(db, "payments"), where("studentEmail", "==", user.email)));
             let paid = 0;
             let receipts = "";
@@ -1167,18 +1532,34 @@
             document.getElementById('stu-balance').innerText = `₱${balance.toLocaleString()}`;
             document.getElementById('stu-receipt-list').innerHTML = receipts || "<p>No payment records found.</p>";
         });
+
         onSnapshot(query(collection(db, "grades"), where("studentEmail", "==", user.email)), (snap) => {
             document.getElementById('stu-grade-body').innerHTML = snap.docs.map(d => {
                 const g = d.data();
                 return `<tr><td>${g.subject}</td><td>${g.grade}</td></tr>`;
             }).join('') || '<tr><td colspan="2">No grades yet</td></tr>';
         });
+
+        // Show schedule prioritized by student's section
         onSnapshot(doc(db, "settings", "schedule"), (s) => {
-            if (s.exists() && s.data().imgUrl) {
-                document.getElementById('stu-schedule-img').src = s.data().imgUrl;
-            }
+            if (!s.exists()) return;
+            const data = s.data();
+            // Try to find schedule for student's grade-section keys
+            (async () => {
+                const uSnap = await getDoc(doc(db, "users", user.uid));
+                if (!uSnap.exists()) return;
+                const u = uSnap.data();
+                const sections = (u.gradeSections || []).map(gs => `${gs.grade}-${gs.section}`);
+                let found = null;
+                for (const key of sections) {
+                    if (data[key]) { found = data[key].imgUrl; break; }
+                }
+                if (!found && data.default) found = data.default.imgUrl;
+                if (found) document.getElementById('stu-schedule-img').src = found;
+            })();
         });
     }
+
     document.getElementById('stu-req-btn').onclick = async () => {
         const type = document.getElementById('stu-req-type').value;
         await addDoc(collection(db, "requests"), {
@@ -1190,8 +1571,28 @@
         alert("Request Sent!");
     };
 
+    function downloadEnrollmentJSON(){
+        // fetch current user's enrollment doc and download as JSON
+        (async ()=>{
+            try{
+                const snap = await getDoc(doc(db, "users", currentUser.uid));
+                if(!snap.exists()) return alert('No enrollment data found');
+                const data = snap.data();
+                const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${(data.name||'enrollment').replace(/\s+/g,'_')}_enrollment.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }catch(e){
+                alert('Failed to download: '+(e.message||''));
+            }
+        })();
+    }
+
     // ────────────────────────────────────────────────
-    // GLOBAL (Unchanged)
+    // GLOBAL (Unchanged with additional bindings)
     // ────────────────────────────────────────────────
     document.getElementById('login-btn').onclick = () => signInWithPopup(auth, provider);
     document.getElementById('logout-btn').onclick = () => signOut(auth).then(() => location.reload());
@@ -1214,6 +1615,9 @@
     window.closeMasterlistModal = closeMasterlistModal;
     window.exportMasterlistCSV = exportMasterlistCSV;
     window.filterMasterlist = filterMasterlist;
+
+    // initialize voucher templates on load
+    loadVoucherTemplates();
 </script>
 </body>
 </html>
