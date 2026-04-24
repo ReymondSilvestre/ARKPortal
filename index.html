@@ -322,6 +322,13 @@
         .modal-content button { background: linear-gradient(135deg, var(--black-light), var(--black-lighter)); color: white; border: none; padding: clamp(15px, 2.5vw, 18px); border-radius: clamp(12px, 2vw, 16px); font-weight: 700; width: 100%; cursor: pointer; font-size: clamp(1rem, 1.8vw, 1.2rem); transition: all 0.3s; text-transform: uppercase; }
         .stats-badge { display: inline-block; background: linear-gradient(135deg, var(--accent-red), #dc2626); color: white; padding: clamp(5px, 0.8vw, 6px) clamp(12px, 1.8vw, 14px); border-radius: clamp(16px, 2.5vw, 20px); font-size: clamp(0.75rem, 1.2vw, 0.85rem); font-weight: 700; margin-left: clamp(8px, 1.2vw, 10px); }
 
+        /* Print status */
+        .print-status-msg { display: none; text-align: center; padding: 10px 16px; border-radius: 10px; font-size: 0.9rem; font-weight: 600; margin: 8px 0; }
+        .print-status-msg.sending { display: block; background: #d1fae5; color: #065f46; }
+        .print-status-msg.success { display: block; background: #d1fae5; color: #065f46; }
+        .print-status-msg.error { display: block; background: #fee2e2; color: #991b1b; }
+        .print-status-msg.fallback { display: block; background: #dbeafe; color: #1e40af; }
+
         /* Auth modals */
         .login-modal, .user-modal, .settings-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10001; justify-content: center; align-items: center; padding: 20px; overflow-y: auto; }
         .login-box, .user-box, .settings-box { background: white; padding: clamp(2rem, 4vw, 3rem); border-radius: clamp(20px, 3vw, 28px); width: 100%; max-width: 500px; box-shadow: var(--shadow-lg); }
@@ -440,7 +447,7 @@
         <div class="modal-window-badge" id="displayWindowBadge">🪟 Window ---</div>
         <div class="modal-name" id="displayName">---</div>
         <div class="modal-location" id="displayLocation">---</div>
-        <p id="printStatusMsg" style="display:none; color: #10b981; font-weight: 600; font-size: 0.95rem;">📡 Sending to Bluetooth printer...</p>
+        <div id="printStatusMsg" class="print-status-msg"></div>
         <p>Please take a photo of your ticket.</p>
         <button onclick="closeModal()">OK, GOT IT</button>
     </div>
@@ -576,8 +583,8 @@
                     <label for="autoPrintEnabled">Auto-print ticket on generation</label>
                 </div>
                 <div class="printer-option">
-                    <input type="checkbox" id="showPreviewFirst" checked>
-                    <label for="showPreviewFirst">Show preview before printing</label>
+                    <input type="checkbox" id="showPreviewFirst">
+                    <label for="showPreviewFirst">Show preview before printing (uncheck for instant print)</label>
                 </div>
             </div>
 
@@ -774,7 +781,7 @@ let lastAnnouncedTicket = null;
 let processedRepeatIds = new Set();
 let printerSettings = { 
     autoPrint: true,
-    showPreviewFirst: true,
+    showPreviewFirst: false,   // DEFAULT: instant print (no preview)
     paperWidth: 58,
     printHeader: true,
     headerText: 'ARK TECHNOLOGICAL INSTITUTE',
@@ -788,6 +795,8 @@ const departmentLocations = { REGISTRAR: 'Registrar Office', FINANCE: 'Finance O
 let bluetoothDevice = null;
 let bluetoothCharacteristic = null;
 let btConnected = false;
+let btReconnectAttempts = 0;
+const BT_MAX_RECONNECT = 3;
 
 // ESC/POS command helpers
 const ESC = 0x1B, GS = 0x1D;
@@ -806,20 +815,25 @@ const CMD = {
     SIZE_4X:    [GS, 0x21, 0x33],
 };
 
-// Known Bluetooth printer service UUIDs — tries each in order
+// Comprehensive list of known BT printer service/characteristic UUIDs
 const BT_SERVICES = [
-    '000018f0-0000-1000-8000-00805f9b34fb',
-    '49535343-fe7d-4ae5-8fa9-9fafd205e455',
-    'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
-    '0000ff00-0000-1000-8000-00805f9b34fb',
-    '0000ffe0-0000-1000-8000-00805f9b34fb',
+    '000018f0-0000-1000-8000-00805f9b34fb',  // Generic serial (common)
+    '49535343-fe7d-4ae5-8fa9-9fafd205e455',  // Microchip BLE
+    'e7810a71-73ae-499d-8c15-faa9aef0c3f2',  // EPSON / Xprinter
+    '0000ff00-0000-1000-8000-00805f9b34fb',  // GOOJPRT, MUNBYN
+    '0000ffe0-0000-1000-8000-00805f9b34fb',  // HM-10 module
+    '0000fff0-0000-1000-8000-00805f9b34fb',  // Peripage / GB03
+    '00001101-0000-1000-8000-00805f9b34fb',  // SPP (some devices)
 ];
 const BT_CHARS = [
-    '00002af1-0000-1000-8000-00805f9b34fb',
-    '49535343-8841-43f4-a8d4-ecbe34729bb3',
-    '0000ff02-0000-1000-8000-00805f9b34fb',
-    '0000ffe1-0000-1000-8000-00805f9b34fb',
-    '00002a56-0000-1000-8000-00805f9b34fb',
+    '00002af1-0000-1000-8000-00805f9b34fb',  // Generic serial write
+    '49535343-8841-43f4-a8d4-ecbe34729bb3',  // Microchip
+    '0000ff02-0000-1000-8000-00805f9b34fb',  // GOOJPRT / MUNBYN
+    '0000ffe1-0000-1000-8000-00805f9b34fb',  // HM-10
+    '0000fff2-0000-1000-8000-00805f9b34fb',  // Peripage
+    '0000ff01-0000-1000-8000-00805f9b34fb',  // Generic
+    '00002a56-0000-1000-8000-00805f9b34fb',  // Digital output
+    '00002a4d-0000-1000-8000-00805f9b34fb',  // HID report
 ];
 
 function textBytes(t) {
@@ -834,7 +848,6 @@ function buildEscPosTicket(name, ticket, dept, windowNum) {
 
     push(...CMD.INIT, ...CMD.ALIGN_C);
 
-    // Header
     if (printerSettings.printHeader && printerSettings.headerText) {
         push(...CMD.BOLD_ON, ...CMD.SIZE_NORM);
         push(...textBytes(printerSettings.headerText));
@@ -844,24 +857,20 @@ function buildEscPosTicket(name, ticket, dept, windowNum) {
     push(...textBytes(divider));
     push(...CMD.FEED(1));
 
-    // Big ticket number
     push(...CMD.BOLD_ON, ...CMD.ALIGN_C, ...CMD.SIZE_4X);
     push(...textBytes(ticket));
     push(...CMD.SIZE_NORM, ...CMD.BOLD_OFF);
     push(...CMD.FEED(1));
 
-    // Department
     push(...CMD.BOLD_ON, ...CMD.SIZE_2X, ...CMD.ALIGN_C);
     push(...textBytes(dept));
     push(...CMD.SIZE_NORM, ...CMD.BOLD_OFF);
     push(...CMD.FEED(1));
 
-    // Name
     push(...CMD.ALIGN_C, ...CMD.SIZE_2H, ...CMD.BOLD_ON);
     push(...textBytes(name.substring(0, chars).toUpperCase()));
     push(...CMD.SIZE_NORM, ...CMD.BOLD_OFF);
 
-    // Window
     if (windowNum) {
         push(...CMD.FEED(1));
         push(...textBytes(divider));
@@ -870,7 +879,6 @@ function buildEscPosTicket(name, ticket, dept, windowNum) {
         push(...CMD.SIZE_NORM, ...CMD.BOLD_OFF);
     }
 
-    // Date/time
     push(...CMD.FEED(1));
     push(...textBytes(divider));
     push(...CMD.ALIGN_C, ...CMD.SIZE_NORM);
@@ -878,7 +886,6 @@ function buildEscPosTicket(name, ticket, dept, windowNum) {
     push(...textBytes(now.toLocaleDateString() + '  ' + now.toLocaleTimeString()));
     push(...CMD.FEED(1));
 
-    // Footer
     if (printerSettings.footerText) {
         push(...CMD.ALIGN_C);
         push(...textBytes(printerSettings.footerText));
@@ -890,77 +897,96 @@ function buildEscPosTicket(name, ticket, dept, windowNum) {
     return new Uint8Array(bytes);
 }
 
+// ── IMPROVED BT CONNECTION ──────────────────────────────────────
+async function findWritableCharacteristic(server) {
+    // 1. Try known service+char combos
+    for (const svcUUID of BT_SERVICES) {
+        let svc = null;
+        try { svc = await server.getPrimaryService(svcUUID); } catch(_) { continue; }
+        for (const charUUID of BT_CHARS) {
+            try {
+                const c = await svc.getCharacteristic(charUUID);
+                if (c && (c.properties.write || c.properties.writeWithoutResponse)) return c;
+            } catch(_) {}
+        }
+        // Enumerate all chars in this service
+        try {
+            const allChars = await svc.getCharacteristics();
+            for (const c of allChars) {
+                if (c.properties.write || c.properties.writeWithoutResponse) return c;
+            }
+        } catch(_) {}
+    }
+
+    // 2. Enumerate ALL services and find first writable char
+    try {
+        const allServices = await server.getPrimaryServices();
+        for (const svc of allServices) {
+            try {
+                const allChars = await svc.getCharacteristics();
+                for (const c of allChars) {
+                    if (c.properties.write || c.properties.writeWithoutResponse) return c;
+                }
+            } catch(_) {}
+        }
+    } catch(_) {}
+
+    return null;
+}
+
 async function connectBluetoothPrinter() {
     if (!navigator.bluetooth) {
-        alert('⚠️ Web Bluetooth is not supported on this browser.\n\nPlease use:\n• Chrome on Android\n• Chrome on Windows/Mac\n• Microsoft Edge\n\nFirefox and Safari do NOT support Web Bluetooth.');
+        alert('⚠️ Web Bluetooth is not supported.\n\nUse Chrome or Edge on Android/Windows/Mac.\nFirefox and Safari do NOT support Web Bluetooth.');
         return false;
     }
+
+    // If already connected, just confirm
+    if (btConnected && bluetoothDevice && bluetoothDevice.gatt.connected) {
+        updateBtStatus('connected');
+        return true;
+    }
+
     try {
         updateBtStatus('scanning');
+
+        // Request device — expose all services so enumeration works
         bluetoothDevice = await navigator.bluetooth.requestDevice({
             acceptAllDevices: true,
             optionalServices: BT_SERVICES
         });
+
         bluetoothDevice.addEventListener('gattserverdisconnected', onBtDisconnected);
         updateBtStatus('connecting');
 
         const server = await bluetoothDevice.gatt.connect();
-        let foundService = null;
-        let foundChar = null;
+        const foundChar = await findWritableCharacteristic(server);
 
-        // Try known service UUIDs
-        for (const svcUUID of BT_SERVICES) {
-            try {
-                foundService = await server.getPrimaryService(svcUUID);
-                if (foundService) break;
-            } catch(_) {}
-        }
-
-        // Fallback: grab first available service
-        if (!foundService) {
-            try {
-                const services = await server.getPrimaryServices();
-                if (services.length > 0) foundService = services[0];
-            } catch(_) {}
-        }
-        if (!foundService) throw new Error('No compatible printer service found. Is the printer on and paired?');
-
-        // Try known characteristic UUIDs
-        for (const charUUID of BT_CHARS) {
-            try {
-                foundChar = await foundService.getCharacteristic(charUUID);
-                if (foundChar) break;
-            } catch(_) {}
-        }
-
-        // Fallback: grab first writable characteristic
         if (!foundChar) {
-            try {
-                const chars = await foundService.getCharacteristics();
-                for (const c of chars) {
-                    if (c.properties.write || c.properties.writeWithoutResponse) {
-                        foundChar = c; break;
-                    }
-                }
-            } catch(_) {}
+            throw new Error(
+                'No writable characteristic found.\n' +
+                'Make sure the printer is:\n' +
+                '• Powered ON\n' +
+                '• In pairing/discoverable mode\n' +
+                '• A supported ESC/POS model'
+            );
         }
-
-        if (!foundChar) throw new Error('No writable characteristic found. Try a different printer model.');
 
         bluetoothCharacteristic = foundChar;
         btConnected = true;
+        btReconnectAttempts = 0;
         updateBtStatus('connected');
-        alert('✅ Bluetooth printer connected: ' + (bluetoothDevice.name || 'Unnamed device'));
         return true;
+
     } catch (e) {
         btConnected = false;
         bluetoothDevice = null;
         bluetoothCharacteristic = null;
-        if (e.name !== 'NotFoundError') {
-            updateBtStatus('error', e.message);
-            alert('❌ Connection failed: ' + e.message);
-        } else {
+        if (e.name === 'NotFoundError') {
+            // User cancelled picker — no error
             updateBtStatus('disconnected');
+        } else {
+            updateBtStatus('error', e.message);
+            alert('❌ Bluetooth connection failed:\n' + e.message);
         }
         return false;
     }
@@ -970,9 +996,32 @@ function onBtDisconnected() {
     btConnected = false;
     bluetoothCharacteristic = null;
     updateBtStatus('disconnected');
+
+    // Auto-reconnect if we have the device ref and haven't exceeded retries
+    if (bluetoothDevice && btReconnectAttempts < BT_MAX_RECONNECT) {
+        btReconnectAttempts++;
+        console.log('BT disconnected — auto-reconnect attempt', btReconnectAttempts);
+        updateBtStatus('connecting');
+        setTimeout(async () => {
+            try {
+                const server = await bluetoothDevice.gatt.connect();
+                const foundChar = await findWritableCharacteristic(server);
+                if (foundChar) {
+                    bluetoothCharacteristic = foundChar;
+                    btConnected = true;
+                    btReconnectAttempts = 0;
+                    updateBtStatus('connected');
+                }
+            } catch(e) {
+                console.warn('Auto-reconnect failed:', e.message);
+                updateBtStatus('disconnected');
+            }
+        }, 1500 * btReconnectAttempts);
+    }
 }
 
 async function disconnectBluetoothPrinter() {
+    btReconnectAttempts = BT_MAX_RECONNECT; // prevent auto-reconnect
     if (bluetoothDevice && bluetoothDevice.gatt.connected) {
         bluetoothDevice.gatt.disconnect();
     }
@@ -984,6 +1033,21 @@ async function disconnectBluetoothPrinter() {
 
 async function sendToBtPrinter(data) {
     if (!btConnected || !bluetoothCharacteristic) return false;
+
+    // Try to reconnect GATT if needed
+    if (!bluetoothDevice.gatt.connected) {
+        try {
+            await bluetoothDevice.gatt.connect();
+            const server = bluetoothDevice.gatt;
+            const foundChar = await findWritableCharacteristic(server);
+            if (!foundChar) throw new Error('Could not find characteristic after reconnect');
+            bluetoothCharacteristic = foundChar;
+        } catch(e) {
+            onBtDisconnected();
+            return false;
+        }
+    }
+
     const CHUNK = 512;
     try {
         for (let i = 0; i < data.length; i += CHUNK) {
@@ -993,13 +1057,12 @@ async function sendToBtPrinter(data) {
             } else {
                 await bluetoothCharacteristic.writeValue(chunk);
             }
-            await new Promise(r => setTimeout(r, 20));
+            await new Promise(r => setTimeout(r, 30)); // slight delay between chunks
         }
         return true;
     } catch (e) {
         console.error('BT print error:', e);
         onBtDisconnected();
-        alert('❌ Print failed: ' + e.message + '\nPrinter may have disconnected.');
         return false;
     }
 }
@@ -1017,15 +1080,10 @@ async function printViaBluetooth(name, ticket, dept, windowNum) {
 function printViaBrowser(name, ticket, dept, windowNum) {
     const chars = printerSettings.paperWidth === 80 ? 42 : 32;
     const divider = '─'.repeat(chars);
-    const pad = (t, w) => {
-        const s = String(t);
-        const p = Math.max(0, Math.floor((w - s.length) / 2));
-        return ' '.repeat(p) + s;
-    };
     const now = new Date();
     const content = `
         <div style="font-family:'Courier New',monospace;font-size:11px;text-align:center;padding:10px;width:${printerSettings.paperWidth === 80 ? '80mm' : '58mm'};margin:0 auto;">
-            <div style="font-weight:bold;font-size:12px;">${printerSettings.headerText || ''}</div>
+            ${printerSettings.printHeader && printerSettings.headerText ? `<div style="font-weight:bold;font-size:12px;">${printerSettings.headerText}</div>` : ''}
             <div>${divider}</div>
             <div style="font-size:36px;font-weight:900;letter-spacing:4px;margin:8px 0;">${ticket}</div>
             <div style="font-size:14px;font-weight:bold;">${dept}</div>
@@ -1036,19 +1094,19 @@ function printViaBrowser(name, ticket, dept, windowNum) {
             <div>${printerSettings.footerText || ''}</div>
         </div>`;
     const w = window.open('', '', 'width=300,height=500');
+    if (!w) {
+        alert('Pop-up blocked! Please allow pop-ups for this site, then try again.');
+        return;
+    }
     w.document.write(`<html><body style="margin:0">${content}</body></html>`);
     w.document.close();
     setTimeout(() => { w.print(); w.close(); }, 300);
 }
 
 async function testBtPrint() {
-    if (!btConnected) {
-        const ok = await connectBluetoothPrinter();
-        if (!ok) return;
-    }
-    const testData = buildEscPosTicket('TEST PRINT', 'T001', 'REGISTRAR', '1');
-    const ok = await sendToBtPrinter(testData);
+    const ok = await printViaBluetooth('TEST PRINT', 'T001', 'REGISTRAR', 1);
     if (ok) alert('✅ Test print sent successfully!');
+    else alert('❌ Test print failed. Check Bluetooth connection.');
 }
 
 function updateBtStatus(state, errMsg) {
@@ -1064,7 +1122,7 @@ function updateBtStatus(state, errMsg) {
         scanning:     { cls: 'scanning',  txt: 'Scanning...',            dot: '#f59e0b', label: '◉ Scanning...',   showConnect: false, showDisconn: false },
         connecting:   { cls: 'scanning',  txt: 'Connecting...',          dot: '#f59e0b', label: '◉ Connecting…',   showConnect: false, showDisconn: false },
         connected:    { cls: 'online',    txt: 'Printer Connected ✓',    dot: '#10b981', label: '● Connected',     showConnect: false, showDisconn: true  },
-        error:        { cls: 'offline',   txt: 'Printer Error',          dot: '#ef4444', label: '● Error',         showConnect: true,  showDisconn: false },
+        error:        { cls: 'offline',   txt: 'Connection Error',       dot: '#ef4444', label: '● Error',         showConnect: true,  showDisconn: false },
     };
     const s = map[state] || map.disconnected;
 
@@ -1075,15 +1133,66 @@ function updateBtStatus(state, errMsg) {
     if (text) text.textContent = s.txt;
     if (statusDot) statusDot.style.background = s.dot;
     if (statusLabel) {
-        statusLabel.textContent = (state === 'error' && errMsg)
-            ? '● Error: ' + errMsg.substring(0, 35)
-            : s.label;
-        if (state === 'connected' && bluetoothDevice) {
+        if (state === 'error' && errMsg) {
+            statusLabel.textContent = '● Error: ' + errMsg.substring(0, 40);
+        } else if (state === 'connected' && bluetoothDevice) {
             statusLabel.textContent = '● ' + (bluetoothDevice.name || 'Printer Connected');
+        } else {
+            statusLabel.textContent = s.label;
         }
     }
     if (connectBtn)    connectBtn.style.display    = s.showConnect  ? 'inline-flex' : 'none';
     if (disconnectBtn) disconnectBtn.style.display = s.showDisconn  ? 'inline-flex' : 'none';
+}
+
+// ── PRINT STATUS MSG HELPERS ────────────────────────────────────
+function setPrintStatus(type, msg) {
+    const el = document.getElementById('printStatusMsg');
+    if (!el) return;
+    el.className = 'print-status-msg ' + type;
+    el.textContent = msg;
+}
+function clearPrintStatus() {
+    const el = document.getElementById('printStatusMsg');
+    if (el) { el.className = 'print-status-msg'; el.textContent = ''; }
+}
+
+// ── AUTO PRINT ON TICKET GENERATION ─────────────────────────────
+// Called immediately after generating a ticket.
+// Flow:
+//   showPreviewFirst=true  → show preview modal (user chooses BT or Browser)
+//   showPreviewFirst=false → attempt BT if connected, else browser print instantly
+async function autoPrintTicket(name, ticket, dept, windowNum) {
+    if (!printerSettings.autoPrint) return;
+
+    if (printerSettings.showPreviewFirst) {
+        showPrintPreview(name, ticket, dept, windowNum);
+        return;
+    }
+
+    // Instant print path
+    if (btConnected) {
+        setPrintStatus('sending', '📡 Sending to Bluetooth printer…');
+        const ok = await printViaBluetooth(name, ticket, dept, windowNum);
+        if (ok) {
+            setPrintStatus('success', '✅ Printed successfully!');
+            setTimeout(clearPrintStatus, 4000);
+        } else {
+            // BT failed — fall back to browser
+            setPrintStatus('fallback', '🖨️ BT failed — opening browser print…');
+            setTimeout(() => {
+                printViaBrowser(name, ticket, dept, windowNum);
+                setTimeout(clearPrintStatus, 3000);
+            }, 600);
+        }
+    } else {
+        // No BT connected — try browser print silently
+        setPrintStatus('fallback', '🖨️ No printer connected — opening browser print…');
+        setTimeout(() => {
+            printViaBrowser(name, ticket, dept, windowNum);
+            setTimeout(clearPrintStatus, 3000);
+        }, 400);
+    }
 }
 
 // ===================== PRINT PREVIEW =====================
@@ -1126,7 +1235,11 @@ async function confirmAndPrintBluetooth() {
     closePrintPreview();
     if (pendingPrintData) {
         const { name, ticket, dept, window: w } = pendingPrintData;
-        await printViaBluetooth(name, ticket, dept, w);
+        setPrintStatus('sending', '📡 Sending to Bluetooth printer…');
+        document.getElementById('ticketModal').style.display = 'flex'; // ensure modal visible
+        const ok = await printViaBluetooth(name, ticket, dept, w);
+        if (ok) { setPrintStatus('success', '✅ Printed successfully!'); setTimeout(clearPrintStatus, 4000); }
+        else     { setPrintStatus('error', '❌ Print failed. Check BT connection.'); setTimeout(clearPrintStatus, 5000); }
     }
 }
 
@@ -1508,48 +1621,36 @@ async function repeatCall(dept) {
 }
 function switchDept(dept) { document.querySelectorAll('.dept-ws').forEach(d=>d.style.display='none'); document.querySelectorAll('.staff-sidebar button').forEach(b=>b.classList.remove('active-dept')); document.getElementById('ws-'+dept).style.display='block'; document.getElementById('btn-tab-'+dept).classList.add('active-dept'); }
 
+// ── GENERATE TICKET — AUTO PRINTS IMMEDIATELY ────────────────────
 async function generateTicket(dept, prefix) {
     const input = document.getElementById('studentName');
     const name = input.value.trim();
     if (!name) { alert('Please enter your name'); return; }
+
     const snap = await db.ref('last_'+dept).get();
     let num = (snap.val() || 0) + 1;
     const ticketID = prefix + num.toString().padStart(3, '0');
     await db.ref('last_'+dept).set(num);
     await db.ref('waiting_'+dept).push({ ticket: ticketID, name });
 
+    // Show ticket modal
     document.getElementById('displayTicket').innerText = ticketID;
     document.getElementById('displayName').innerText = name;
     document.getElementById('displayLocation').innerText = `Please proceed to the ${departmentLocations[dept]}`;
     document.getElementById('displayWindowBadge').classList.remove('visible');
+    clearPrintStatus();
     document.getElementById('ticketModal').style.display = 'flex';
     input.value = '';
 
-    // AUTO-PRINT
-    if (printerSettings.autoPrint) {
-        const printStatusMsg = document.getElementById('printStatusMsg');
-        printStatusMsg.style.display = 'block';
-        if (printerSettings.showPreviewFirst) {
-            setTimeout(() => showPrintPreview(name, ticketID, dept, null), 400);
-        } else {
-            // Try Bluetooth first, fallback to browser print
-            setTimeout(async () => {
-                if (btConnected) {
-                    const ok = await printViaBluetooth(name, ticketID, dept, null);
-                    if (!ok) printViaBrowser(name, ticketID, dept, null);
-                } else {
-                    printViaBrowser(name, ticketID, dept, null);
-                }
-            }, 600);
-        }
-    }
+    // AUTO-PRINT: fires immediately, no delay needed
+    autoPrintTicket(name, ticketID, dept, null);
 
     setTimeout(closeModal, 8000);
 }
 
 function closeModal() {
     document.getElementById('ticketModal').style.display = 'none';
-    document.getElementById('printStatusMsg').style.display = 'none';
+    clearPrintStatus();
 }
 
 // ===================== INIT =====================
