@@ -249,7 +249,6 @@
         .btn-reg { background: linear-gradient(135deg, var(--accent-red) 0%, #dc2626 100%); color: white; }
         .btn-fin { background: linear-gradient(135deg, var(--accent-red-light) 0%, var(--accent-red) 100%); color: white; }
         .btn-reg:hover, .btn-fin:hover { transform: translateY(-3px); }
-        .btn-reg:active, .btn-fin:active { transform: scale(0.97); }
 
         /* Staff */
         .staff-container { display: flex; flex-direction: column; width: 100%; max-width: clamp(900px, 95vw, 1100px); background: white; border-radius: clamp(20px, 3vw, 28px); overflow: hidden; box-shadow: var(--shadow-lg); border: 3px solid #f1f5f9; }
@@ -260,6 +259,7 @@
         .current-ticket-display { background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding: clamp(15px, 2.5vw, 20px); border-radius: clamp(12px, 2vw, 16px); border: 2px solid #e2e8f0; box-shadow: var(--shadow-sm); position: relative; }
         .current-ticket-display h3 { margin: 0 0 clamp(8px, 1.5vw, 10px) 0; font-size: clamp(0.8rem, 1.3vw, 0.9rem); color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
         .current-ticket-info { font-weight: 700; font-size: clamp(1.2rem, 2.5vw, 1.6rem); color: var(--text-main); }
+        .current-ticket-meta { font-size: clamp(0.8rem, 1.2vw, 0.95rem); color: var(--text-muted); font-weight: 600; margin-top: 4px; }
         .current-window-info { display: none; margin-top: 6px; font-size: clamp(0.8rem, 1.2vw, 0.9rem); font-weight: 600; color: white; background: linear-gradient(135deg, var(--accent-red), #dc2626); border-radius: 8px; padding: 5px 12px; width: fit-content; }
         .current-window-info.visible { display: block; }
         .staff-actions { display: flex; gap: clamp(12px, 2vw, 15px); justify-content: center; flex-wrap: wrap; align-items: center; }
@@ -274,6 +274,7 @@
         .queue-item-info { flex: 1; min-width: 0; }
         .queue-item-ticket { font-weight: 900; font-size: clamp(1rem, 1.8vw, 1.2rem); color: var(--accent-red); font-family: 'Courier New', monospace; }
         .queue-item-name { font-size: clamp(0.85rem, 1.3vw, 1rem); color: var(--text-main); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .queue-item-meta { font-size: clamp(0.72rem, 1.1vw, 0.82rem); color: var(--text-muted); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .call-specific-btn { background: linear-gradient(135deg, var(--accent-red), #dc2626); color: white; border: none; padding: clamp(8px, 1.2vw, 10px) clamp(16px, 2.5vw, 20px); border-radius: clamp(8px, 1.2vw, 10px); font-weight: 700; cursor: pointer; transition: all 0.3s; font-size: clamp(0.75rem, 1.2vw, 0.85rem); text-transform: uppercase; flex-shrink: 0; }
         .delete-queue-btn { background: transparent; border: 2px solid #fca5a5; color: #ef4444; border-radius: clamp(8px, 1.2vw, 10px); width: clamp(34px, 5vw, 40px); height: clamp(34px, 5vw, 40px); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.25s; flex-shrink: 0; padding: 0; }
         .delete-queue-btn:hover { background: #ef4444; border-color: #ef4444; }
@@ -316,7 +317,8 @@
         .modal-ticket { font-size: clamp(3.5rem, 10vw, 6rem); font-weight: 900; background: linear-gradient(135deg, var(--accent-red), var(--black-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: clamp(12px, 2vw, 15px) 0; font-family: 'Courier New', monospace; letter-spacing: clamp(2px, 0.5vw, 4px); line-height: 1; }
         .modal-window-badge { display: none; margin: 0 auto clamp(10px, 1.5vw, 14px); background: linear-gradient(135deg, var(--accent-red), #dc2626); color: white; border-radius: 14px; padding: 12px 24px; font-size: clamp(1rem, 2vw, 1.3rem); font-weight: 900; width: fit-content; }
         .modal-window-badge.visible { display: block; }
-        .modal-dept { font-weight: bold; font-size: clamp(1.2rem, 2.5vw, 1.6rem); margin-bottom: clamp(12px, 2vw, 15px); }
+        .modal-name { font-weight: bold; font-size: clamp(1.2rem, 2.5vw, 1.6rem); margin-bottom: clamp(12px, 2vw, 15px); }
+        .modal-meta { font-size: clamp(0.85rem, 1.6vw, 1rem); color: var(--text-muted); font-weight: 600; margin-top: -8px; margin-bottom: clamp(12px, 2vw, 15px); }
         .modal-location { font-size: clamp(1rem, 2vw, 1.3rem); color: var(--accent-red); font-weight: 600; margin-bottom: clamp(12px, 2vw, 15px); }
         .modal-content h2 { color: var(--text-muted); font-size: clamp(0.9rem, 1.5vw, 1.1rem); font-weight: 700; text-transform: uppercase; letter-spacing: clamp(1px, 0.2vw, 2px); margin: 0; }
         .modal-content p { color: #64748b; font-size: clamp(1rem, 1.5vw, 1.1rem); margin: clamp(12px, 2vw, 15px) 0; }
@@ -390,12 +392,6 @@
         .printer-option input[type="radio"], .printer-option input[type="checkbox"] { cursor: pointer; width: 18px; height: 18px; }
         .printer-option label { flex: 1; margin: 0; cursor: pointer; font-weight: 500; font-size: 0.95rem; }
 
-        /* Flash overlay for instant kiosk ticket generation */
-        .kiosk-flash-overlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.96); z-index: 10005; justify-content: center; align-items: center; }
-        .kiosk-flash-overlay.active { display: flex; animation: flashFade 0.4s ease-out; }
-        @keyframes flashFade { from { opacity: 0; } to { opacity: 1; } }
-        .kiosk-flash-ticket { font-size: clamp(4rem, 16vw, 9rem); font-weight: 900; font-family: 'Courier New', monospace; background: linear-gradient(135deg, var(--accent-red), var(--black-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: 4px; }
-
         @media (max-width: 767px) { .staff-actions { flex-direction: column; } }
         @media (min-width: 768px) { .monitor-container { grid-template-columns: 1fr 1fr; } .staff-sidebar { flex-direction: column; width: clamp(180px, 20vw, 220px); border-bottom: none; border-right: 2px solid #e2e8f0; } .staff-container { flex-direction: row; min-height: clamp(500px, 60vh, 600px); } .staff-sidebar button.active-dept { box-shadow: inset -5px 0 0 var(--accent-red); } }
     </style>
@@ -446,18 +442,14 @@
     </video>
 </div>
 
-<!-- ===================== KIOSK INSTANT FLASH OVERLAY ===================== -->
-<div class="kiosk-flash-overlay" id="kioskFlashOverlay">
-    <div class="kiosk-flash-ticket" id="kioskFlashTicket">---</div>
-</div>
-
 <!-- ===================== TICKET MODAL ===================== -->
 <div id="ticketModal">
     <div class="modal-content">
         <h2>YOUR TICKET NUMBER</h2>
         <div class="modal-ticket" id="displayTicket">---</div>
         <div class="modal-window-badge" id="displayWindowBadge">🪟 Window ---</div>
-        <div class="modal-dept" id="displayDept">---</div>
+        <div class="modal-name" id="displayName">---</div>
+        <div class="modal-meta" id="displayMeta"></div>
         <div class="modal-location" id="displayLocation">---</div>
         <div id="printStatusMsg" class="print-status-msg"></div>
         <p>Please take a photo of your ticket.</p>
@@ -666,7 +658,10 @@
 <!-- ===================== KIOSK VIEW ===================== -->
 <div id="kioskView" class="view">
     <div class="kiosk-card">
-        <h2>Get Your Queue Number</h2>
+        <h2>Queue Registration</h2>
+        <input type="text" id="studentName" class="name-input" placeholder="Enter Full Name">
+        <input type="text" id="studentSection" class="name-input" placeholder="Section (optional)">
+        <input type="text" id="studentPurpose" class="name-input" placeholder="Purpose of Visit (optional)">
         <button class="btn-reg" onclick="generateTicket('REGISTRAR', 'R')">📋 REGISTRAR</button>
         <button class="btn-fin" onclick="generateTicket('FINANCE', 'F')">💰 FINANCE</button>
     </div>
@@ -685,14 +680,14 @@
                 <h2 style="color:var(--accent-red); margin-top: 0; font-size: 1.8rem;">📋 Registrar Counter <span class="stats-badge" id="count-REGISTRAR">0</span></h2>
                 <div class="queue-notification-banner" id="notif-REGISTRAR">
                     <div class="bell-icon-wrap"><svg class="bell-svg" id="bell-svg-REGISTRAR" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg><div class="bell-badge" id="bell-badge-REGISTRAR">0</div></div>
-                    <div class="notif-text"><div class="notif-title" id="notif-title-REGISTRAR">New ticket in queue!</div><div class="notif-sub" id="notif-sub-REGISTRAR">1 waiting</div></div>
+                    <div class="notif-text"><div class="notif-title" id="notif-title-REGISTRAR">New student in queue!</div><div class="notif-sub" id="notif-sub-REGISTRAR">1 person waiting</div></div>
                     <button class="notif-dismiss" onclick="dismissNotif('REGISTRAR')">Dismiss</button>
                 </div>
-                <div class="repeat-broadcast-toast" id="repeat-toast-REGISTRAR"><span class="repeat-toast-icon">🔊</span><div class="repeat-toast-text">Repeat call broadcast by <span class="repeat-toast-dept" id="repeat-toast-by-REGISTRAR">staff</span></div></div>
+                <div class="repeat-broadcast-toast" id="repeat-toast-REGISTRAR"><span class="repeat-toast-icon">🔊</span><div class="repeat-toast-text">Repeat call broadcast by <span class="repeat-toast-by-REGISTRAR" id="repeat-toast-by-REGISTRAR">staff</span></div></div>
                 <div class="current-ticket-display" id="ticket-display-REGISTRAR">
                     <h3>Currently Serving</h3>
                     <div class="current-ticket-row">
-                        <div><div class="current-ticket-info" id="current-name-REGISTRAR">---</div><div class="current-window-info" id="current-window-REGISTRAR">🪟 Window ---</div></div>
+                        <div><div class="current-ticket-info" id="current-name-REGISTRAR">---</div><div class="current-ticket-meta" id="current-meta-REGISTRAR"></div><div class="current-window-info" id="current-window-REGISTRAR">🪟 Window ---</div></div>
                         <button class="dismiss-no-show-btn" id="dismiss-btn-REGISTRAR" onclick="dismissNoShow('REGISTRAR')"><svg class="dismiss-icon" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>No-Show</button>
                     </div>
                 </div>
@@ -707,14 +702,14 @@
                 <h2 style="color:var(--accent-red-light); margin-top: 0; font-size: 1.8rem;">💰 Finance Counter <span class="stats-badge" style="background: linear-gradient(135deg, var(--accent-red-light), var(--accent-red));" id="count-FINANCE">0</span></h2>
                 <div class="queue-notification-banner" id="notif-FINANCE">
                     <div class="bell-icon-wrap"><svg class="bell-svg" id="bell-svg-FINANCE" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg><div class="bell-badge" id="bell-badge-FINANCE">0</div></div>
-                    <div class="notif-text"><div class="notif-title" id="notif-title-FINANCE">New ticket in queue!</div><div class="notif-sub" id="notif-sub-FINANCE">1 waiting</div></div>
+                    <div class="notif-text"><div class="notif-title" id="notif-title-FINANCE">New student in queue!</div><div class="notif-sub" id="notif-sub-FINANCE">1 person waiting</div></div>
                     <button class="notif-dismiss" onclick="dismissNotif('FINANCE')">Dismiss</button>
                 </div>
                 <div class="repeat-broadcast-toast" id="repeat-toast-FINANCE"><span class="repeat-toast-icon">🔊</span><div class="repeat-toast-text">Repeat call broadcast by <span class="repeat-toast-dept" id="repeat-toast-by-FINANCE">staff</span></div></div>
                 <div class="current-ticket-display" id="ticket-display-FINANCE">
                     <h3>Currently Serving</h3>
                     <div class="current-ticket-row">
-                        <div><div class="current-ticket-info" id="current-name-FINANCE">---</div><div class="current-window-info" id="current-window-FINANCE">🪟 Window ---</div></div>
+                        <div><div class="current-ticket-info" id="current-name-FINANCE">---</div><div class="current-ticket-meta" id="current-meta-FINANCE"></div><div class="current-window-info" id="current-window-FINANCE">🪟 Window ---</div></div>
                         <button class="dismiss-no-show-btn" id="dismiss-btn-FINANCE" onclick="dismissNoShow('FINANCE')"><svg class="dismiss-icon" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>No-Show</button>
                     </div>
                 </div>
@@ -800,9 +795,7 @@ let printerSettings = {
     printQRCode: true,
 };
 let pendingPrintData = null;
-let kioskBusy = false; // debounce: prevent double taps on kiosk buttons
 const departmentLocations = { REGISTRAR: 'Registrar Office', FINANCE: 'Finance Office' };
-const departmentLabels = { REGISTRAR: 'REGISTRAR', FINANCE: 'FINANCE' };
 
 // ===================== WEB BLUETOOTH PRINTER =====================
 let bluetoothDevice = null;
@@ -853,7 +846,7 @@ function textBytes(t) {
     return Array.from(new TextEncoder().encode(t + '\n'));
 }
 
-function buildEscPosTicket(ticket, dept, windowNum) {
+function buildEscPosTicket(name, ticket, dept, windowNum, section, purpose) {
     const bytes = [];
     const push = (...arr) => arr.forEach(a => Array.isArray(a) ? bytes.push(...a) : bytes.push(a));
     const chars = printerSettings.paperWidth === 80 ? 42 : 32;
@@ -878,6 +871,18 @@ function buildEscPosTicket(ticket, dept, windowNum) {
     push(...CMD.BOLD_ON, ...CMD.SIZE_2X, ...CMD.ALIGN_C);
     push(...textBytes(dept));
     push(...CMD.SIZE_NORM, ...CMD.BOLD_OFF);
+    push(...CMD.FEED(1));
+
+    push(...CMD.ALIGN_C, ...CMD.SIZE_2H, ...CMD.BOLD_ON);
+    push(...textBytes(name.substring(0, chars).toUpperCase()));
+    push(...CMD.SIZE_NORM, ...CMD.BOLD_OFF);
+
+    if (section || purpose) {
+        push(...CMD.FEED(1));
+        push(...CMD.ALIGN_C, ...CMD.SIZE_NORM);
+        if (section) push(...textBytes('Section: ' + section.substring(0, chars - 9)));
+        if (purpose) push(...textBytes('Purpose: ' + purpose.substring(0, chars - 9)));
+    }
 
     if (windowNum) {
         push(...CMD.FEED(1));
@@ -1075,26 +1080,31 @@ async function sendToBtPrinter(data) {
     }
 }
 
-async function printViaBluetooth(ticket, dept, windowNum) {
+async function printViaBluetooth(name, ticket, dept, windowNum, section, purpose) {
     if (!btConnected) {
         const ok = await connectBluetoothPrinter();
         if (!ok) return false;
     }
-    const data = buildEscPosTicket(ticket, dept, windowNum);
+    const data = buildEscPosTicket(name, ticket, dept, windowNum, section, purpose);
     return await sendToBtPrinter(data);
 }
 
 // Browser fallback print
-function printViaBrowser(ticket, dept, windowNum) {
+function printViaBrowser(name, ticket, dept, windowNum, section, purpose) {
     const chars = printerSettings.paperWidth === 80 ? 42 : 32;
     const divider = '─'.repeat(chars);
     const now = new Date();
+    const metaLines = [];
+    if (section) metaLines.push(`Section: ${section}`);
+    if (purpose) metaLines.push(`Purpose: ${purpose}`);
     const content = `
         <div style="font-family:'Courier New',monospace;font-size:11px;text-align:center;padding:10px;width:${printerSettings.paperWidth === 80 ? '80mm' : '58mm'};margin:0 auto;">
             ${printerSettings.printHeader && printerSettings.headerText ? `<div style="font-weight:bold;font-size:12px;">${printerSettings.headerText}</div>` : ''}
             <div>${divider}</div>
             <div style="font-size:36px;font-weight:900;letter-spacing:4px;margin:8px 0;">${ticket}</div>
             <div style="font-size:14px;font-weight:bold;">${dept}</div>
+            <div style="font-size:12px;font-weight:bold;">${name.toUpperCase()}</div>
+            ${metaLines.length ? `<div style="font-size:10px;margin-top:4px;">${metaLines.join('<br>')}</div>` : ''}
             ${windowNum ? `<div>${divider}</div><div style="font-size:16px;font-weight:bold;">WINDOW ${windowNum}</div>` : ''}
             <div>${divider}</div>
             <div style="font-size:9px;">${now.toLocaleDateString()} ${now.toLocaleTimeString()}</div>
@@ -1111,7 +1121,7 @@ function printViaBrowser(ticket, dept, windowNum) {
 }
 
 async function testBtPrint() {
-    const ok = await printViaBluetooth('T001', 'REGISTRAR', 1);
+    const ok = await printViaBluetooth('TEST PRINT', 'T001', 'REGISTRAR', 1, 'BSIT-3A', 'Testing');
     if (ok) alert('✅ Test print sent successfully!');
     else alert('❌ Test print failed. Check Bluetooth connection.');
 }
@@ -1169,18 +1179,18 @@ function clearPrintStatus() {
 // Flow:
 //   showPreviewFirst=true  → show preview modal (user chooses BT or Browser)
 //   showPreviewFirst=false → attempt BT if connected, else browser print instantly
-async function autoPrintTicket(ticket, dept, windowNum) {
+async function autoPrintTicket(name, ticket, dept, windowNum, section, purpose) {
     if (!printerSettings.autoPrint) return;
 
     if (printerSettings.showPreviewFirst) {
-        showPrintPreview(ticket, dept, windowNum);
+        showPrintPreview(name, ticket, dept, windowNum, section, purpose);
         return;
     }
 
     // Instant print path
     if (btConnected) {
         setPrintStatus('sending', '📡 Sending to Bluetooth printer…');
-        const ok = await printViaBluetooth(ticket, dept, windowNum);
+        const ok = await printViaBluetooth(name, ticket, dept, windowNum, section, purpose);
         if (ok) {
             setPrintStatus('success', '✅ Printed successfully!');
             setTimeout(clearPrintStatus, 4000);
@@ -1188,7 +1198,7 @@ async function autoPrintTicket(ticket, dept, windowNum) {
             // BT failed — fall back to browser
             setPrintStatus('fallback', '🖨️ BT failed — opening browser print…');
             setTimeout(() => {
-                printViaBrowser(ticket, dept, windowNum);
+                printViaBrowser(name, ticket, dept, windowNum, section, purpose);
                 setTimeout(clearPrintStatus, 3000);
             }, 600);
         }
@@ -1196,17 +1206,20 @@ async function autoPrintTicket(ticket, dept, windowNum) {
         // No BT connected — try browser print silently
         setPrintStatus('fallback', '🖨️ No printer connected — opening browser print…');
         setTimeout(() => {
-            printViaBrowser(ticket, dept, windowNum);
+            printViaBrowser(name, ticket, dept, windowNum, section, purpose);
             setTimeout(clearPrintStatus, 3000);
         }, 400);
     }
 }
 
 // ===================== PRINT PREVIEW =====================
-function generatePreviewHTML(ticket, dept, windowNum) {
+function generatePreviewHTML(name, ticket, dept, windowNum, section, purpose) {
     const chars = printerSettings.paperWidth === 80 ? 42 : 32;
     const divider = '─'.repeat(chars);
     const now = new Date();
+    const metaLines = [];
+    if (section) metaLines.push(`Section: ${section}`);
+    if (purpose) metaLines.push(`Purpose: ${purpose}`);
     return `
         <div style="font-family:'Courier New',monospace; font-size:11px; text-align:center; line-height:1.6;">
             <div>${'='.repeat(chars)}</div>
@@ -1214,6 +1227,8 @@ function generatePreviewHTML(ticket, dept, windowNum) {
             <div>${divider}</div>
             <div style="font-size:2.8rem;font-weight:900;letter-spacing:4px;margin:8px 0;">${ticket}</div>
             <div style="font-size:1rem;font-weight:bold;">${dept}</div>
+            <div style="font-size:0.9rem;">${name.toUpperCase()}</div>
+            ${metaLines.length ? `<div style="font-size:0.8rem;margin-top:4px;">${metaLines.join('<br>')}</div>` : ''}
             ${windowNum ? `<div>${divider}</div><div style="font-size:1.1rem;font-weight:bold;">🪟 WINDOW ${windowNum}</div>` : ''}
             <div>${divider}</div>
             <div style="font-size:0.75rem;">${now.toLocaleDateString()} &nbsp; ${now.toLocaleTimeString()}</div>
@@ -1222,15 +1237,15 @@ function generatePreviewHTML(ticket, dept, windowNum) {
         </div>`;
 }
 
-function showPrintPreview(ticket, dept, windowNum) {
-    pendingPrintData = { ticket, dept, window: windowNum };
+function showPrintPreview(name, ticket, dept, windowNum, section, purpose) {
+    pendingPrintData = { name, ticket, dept, window: windowNum, section, purpose };
     const preview = document.getElementById('thermalPreviewContent');
-    preview.innerHTML = generatePreviewHTML(ticket, dept, windowNum);
+    preview.innerHTML = generatePreviewHTML(name, ticket, dept, windowNum, section, purpose);
     document.getElementById('printPreviewModal').classList.add('active');
 }
 
 function testPrintPreview() {
-    showPrintPreview('R001', 'REGISTRAR', 1);
+    showPrintPreview('Juan Dela Cruz', 'R001', 'REGISTRAR', 1, 'BSIT-3A', 'Enrollment');
 }
 
 function closePrintPreview() {
@@ -1240,10 +1255,10 @@ function closePrintPreview() {
 async function confirmAndPrintBluetooth() {
     closePrintPreview();
     if (pendingPrintData) {
-        const { ticket, dept, window: w } = pendingPrintData;
+        const { name, ticket, dept, window: w, section, purpose } = pendingPrintData;
         setPrintStatus('sending', '📡 Sending to Bluetooth printer…');
         document.getElementById('ticketModal').style.display = 'flex'; // ensure modal visible
-        const ok = await printViaBluetooth(ticket, dept, w);
+        const ok = await printViaBluetooth(name, ticket, dept, w, section, purpose);
         if (ok) { setPrintStatus('success', '✅ Printed successfully!'); setTimeout(clearPrintStatus, 4000); }
         else     { setPrintStatus('error', '❌ Print failed. Check BT connection.'); setTimeout(clearPrintStatus, 5000); }
     }
@@ -1252,8 +1267,8 @@ async function confirmAndPrintBluetooth() {
 function confirmAndPrintBrowser() {
     closePrintPreview();
     if (pendingPrintData) {
-        const { ticket, dept, window: w } = pendingPrintData;
-        printViaBrowser(ticket, dept, w);
+        const { name, ticket, dept, window: w, section, purpose } = pendingPrintData;
+        printViaBrowser(name, ticket, dept, w, section, purpose);
     }
 }
 
@@ -1285,10 +1300,10 @@ function unlockAudio() {
     silent.play().then(() => {
         audioUnlocked = true; hideAudioUnlockOverlay(); updateAudioStatusBadge(true);
         const primer = new SpeechSynthesisUtterance(''); primer.volume = 0; window.speechSynthesis.speak(primer);
-        if (pendingAnnouncement) { const p = pendingAnnouncement; pendingAnnouncement = null; setTimeout(() => announceTicket(p.ticket, p.dept, p.windowNum), 600); }
+        if (pendingAnnouncement) { const p = pendingAnnouncement; pendingAnnouncement = null; setTimeout(() => announceTicket(p.name, p.ticket, p.dept, p.windowNum), 600); }
     }).catch(() => {
         audioUnlocked = true; hideAudioUnlockOverlay(); updateAudioStatusBadge(true);
-        if (pendingAnnouncement) { const p = pendingAnnouncement; pendingAnnouncement = null; setTimeout(() => announceTicket(p.ticket, p.dept, p.windowNum), 600); }
+        if (pendingAnnouncement) { const p = pendingAnnouncement; pendingAnnouncement = null; setTimeout(() => announceTicket(p.name, p.ticket, p.dept, p.windowNum), 600); }
     });
 }
 function retryUnlockAudio() { if (!audioUnlocked) unlockAudio(); }
@@ -1311,16 +1326,16 @@ document.addEventListener('click', function() {
 });
 
 // ===================== ANNOUNCEMENT =====================
-function announceTicket(ticket, dept, windowNum) {
+function announceTicket(name, ticket, dept, windowNum) {
     if (!announcementSettings.enabled) return;
-    if (!audioUnlocked) { pendingAnnouncement = { ticket, dept, windowNum }; return; }
-    if (announcementInProgress) { setTimeout(() => announceTicket(ticket, dept, windowNum), 2000); return; }
+    if (!audioUnlocked) { pendingAnnouncement = { name, ticket, dept, windowNum }; return; }
+    if (announcementInProgress) { setTimeout(() => announceTicket(name, ticket, dept, windowNum), 2000); return; }
     window.speechSynthesis.cancel();
     announcementInProgress = true;
     const location = departmentLocations[dept] || 'the counter';
     const msgText = windowNum
-        ? `Now serving ticket number ${ticket}. Please proceed to Window ${windowNum} at the ${location}.`
-        : `Now serving ticket number ${ticket}. Please proceed to the ${location}.`;
+        ? `Now serving ${name}. Ticket number ${ticket}. Please proceed to Window ${windowNum} at the ${location}.`
+        : `Now serving ${name}. Ticket number ${ticket}. Please proceed to the ${location}.`;
     const msg = new SpeechSynthesisUtterance(msgText);
     msg.rate = announcementSettings.rate;
     msg.pitch = announcementSettings.pitch;
@@ -1329,16 +1344,16 @@ function announceTicket(ticket, dept, windowNum) {
     msg.onend = () => { announcementInProgress = false; hideAnnouncementIndicator(); };
     msg.onerror = (e) => {
         announcementInProgress = false; hideAnnouncementIndicator(); playDingNotification();
-        if (e.error === 'not-allowed' || e.error === 'audio-capture') { audioUnlocked = false; updateAudioStatusBadge(false); if (currentActiveView === 'monitorView') { showAudioUnlockOverlay(); pendingAnnouncement = { ticket, dept, windowNum }; } }
+        if (e.error === 'not-allowed' || e.error === 'audio-capture') { audioUnlocked = false; updateAudioStatusBadge(false); if (currentActiveView === 'monitorView') { showAudioUnlockOverlay(); pendingAnnouncement = { name, ticket, dept, windowNum }; } }
     };
     window.speechSynthesis.speak(msg);
-    lastAnnouncedTicket = { ticket, dept, windowNum, time: Date.now() };
+    lastAnnouncedTicket = { ticket, name, dept, windowNum, time: Date.now() };
     updateLastAnnouncedDisplay();
 }
 function showAnnouncementIndicator(dept) { const el = document.getElementById('announcement-indicator-' + dept); if (el) { el.style.display = 'block'; el.classList.add('announcing'); } }
 function hideAnnouncementIndicator() { document.querySelectorAll('[id^="announcement-indicator"]').forEach(el => { el.classList.remove('announcing'); setTimeout(() => { if (!el.classList.contains('announcing')) el.style.display = 'none'; }, 500); }); }
-function updateLastAnnouncedDisplay() { if (lastAnnouncedTicket) { const info = `${lastAnnouncedTicket.ticket} (${lastAnnouncedTicket.dept})`; const st = document.getElementById('announcementStatus'); const li = document.getElementById('lastAnnouncedInfo'); if (st && li) { li.innerText = info; st.style.display = 'block'; } } }
-function testAnnouncement() { announceTicket('R001', 'REGISTRAR', '1'); }
+function updateLastAnnouncedDisplay() { if (lastAnnouncedTicket) { const info = `${lastAnnouncedTicket.ticket} - ${lastAnnouncedTicket.name} (${lastAnnouncedTicket.dept})`; const st = document.getElementById('announcementStatus'); const li = document.getElementById('lastAnnouncedInfo'); if (st && li) { li.innerText = info; st.style.display = 'block'; } } }
+function testAnnouncement() { announceTicket('Juan dela Cruz', 'R001', 'REGISTRAR', '1'); }
 
 async function loadAnnouncementSettings() {
     try { const snap = await db.ref('settings/announcements').once('value'); if (snap.exists()) announcementSettings = { ...announcementSettings, ...snap.val() }; } catch(e) {}
@@ -1362,6 +1377,14 @@ function updateMonitorWindow(dept, windowNum) {
 }
 function clearMonitorWindow(dept) { const el = document.getElementById('mon-window-' + dept); const pl = document.getElementById('mon-proceed-label-' + dept); if (el) el.classList.remove('visible'); if (pl) pl.classList.remove('visible'); }
 function updateStaffWindowInfo(dept, windowNum) { const el = document.getElementById('current-window-' + dept); if (!el) return; if (windowNum) { el.textContent = `🪟 Window ${windowNum}`; el.classList.add('visible'); } else { el.classList.remove('visible'); } }
+function updateStaffMetaInfo(dept, section, purpose) {
+    const el = document.getElementById('current-meta-' + dept);
+    if (!el) return;
+    const parts = [];
+    if (section) parts.push('Section: ' + section);
+    if (purpose) parts.push('Purpose: ' + purpose);
+    el.textContent = parts.join(' • ');
+}
 
 // ===================== AUTH =====================
 async function initializeDefaultAdmin() {
@@ -1504,14 +1527,14 @@ async function resetDepartment() {
 }
 async function resetSystem() {
     if (!currentUserData || currentUserData.role !== 'admin') return;
-    if (confirm('Reset ALL ticket counts?')) { await db.ref('/').update({'last_REGISTRAR':0,'last_FINANCE':0,'waiting_REGISTRAR':null,'waiting_FINANCE':null,'currentCall':{ticket:'---',dept:'NONE',window:null,time:0}}); prevQueueCount={REGISTRAR:0,FINANCE:0}; activeTicket={REGISTRAR:false,FINANCE:false}; alert('System reset!'); location.reload(); }
+    if (confirm('Reset ALL ticket counts?')) { await db.ref('/').update({'last_REGISTRAR':0,'last_FINANCE':0,'waiting_REGISTRAR':null,'waiting_FINANCE':null,'currentCall':{ticket:'---',name:'Welcome',dept:'NONE',window:null,time:0}}); prevQueueCount={REGISTRAR:0,FINANCE:0}; activeTicket={REGISTRAR:false,FINANCE:false}; alert('System reset!'); location.reload(); }
 }
 
 // ===================== NOTIFICATION BELL =====================
-function triggerQueueNotification(dept, count) {
+function triggerQueueNotification(dept, count, latestName) {
     const banner = document.getElementById('notif-'+dept); const bell = document.getElementById('bell-svg-'+dept); const badge = document.getElementById('bell-badge-'+dept); const title = document.getElementById('notif-title-'+dept); const sub = document.getElementById('notif-sub-'+dept);
     if (!banner) return;
-    badge.textContent = count; title.textContent = 'New ticket in queue!'; sub.textContent = count===1 ? '1 waiting' : `${count} waiting`;
+    badge.textContent = count; title.textContent = latestName ? `${latestName} joined the queue!` : 'New student in queue!'; sub.textContent = count===1 ? '1 person waiting' : `${count} people waiting`;
     banner.classList.add('visible'); notifDismissed[dept] = false; bell.classList.remove('ringing'); void bell.offsetWidth; bell.classList.add('ringing'); playQueueArrivalSound();
     clearTimeout(banner._autoHide); banner._autoHide = setTimeout(() => { if (!notifDismissed[dept]) dismissNotif(dept); }, 8000);
 }
@@ -1522,8 +1545,8 @@ function updateDismissBtn(dept) { const btn = document.getElementById('dismiss-b
 async function dismissNoShow(dept) {
     if (!confirm(`Mark current ${dept} ticket as no-show?`)) return;
     const snap = await db.ref('currentCall').once('value'); const cc = snap.val();
-    if (cc && cc.dept === dept) await db.ref('currentCall').set({ticket:'---',dept:'NONE',window:null,time:Date.now()});
-    activeTicket[dept] = false; document.getElementById('current-name-'+dept).innerText = '---'; updateDismissBtn(dept); updateStaffWindowInfo(dept, null); lastCalled[dept] = null;
+    if (cc && cc.dept === dept) await db.ref('currentCall').set({ticket:'---',name:'Welcome',dept:'NONE',window:null,time:Date.now()});
+    activeTicket[dept] = false; document.getElementById('current-name-'+dept).innerText = '---'; updateDismissBtn(dept); updateStaffWindowInfo(dept, null); updateStaffMetaInfo(dept, '', ''); lastCalled[dept] = null;
     const numEl = document.getElementById('mon-num-'+dept); const nameEl = document.getElementById('mon-name-'+dept); const locEl = document.getElementById('mon-location-'+dept);
     if (numEl) numEl.innerText = '---'; clearMonitorWindow(dept); if (nameEl) nameEl.innerText = 'Welcome'; if (locEl) locEl.innerText = '';
 }
@@ -1562,13 +1585,13 @@ db.ref('currentCall').on('value', (snap) => {
     const data = snap.val();
     if (data && data.dept !== 'NONE') {
         const numEl = document.getElementById('mon-num-'+data.dept); const nameEl = document.getElementById('mon-name-'+data.dept); const locEl = document.getElementById('mon-location-'+data.dept); const panelEl = document.getElementById('panel-'+data.dept); const staffDisplay = document.getElementById('current-name-'+data.dept);
-        if (numEl) numEl.innerText = data.ticket; if (nameEl) nameEl.innerText = departmentLabels[data.dept] || 'Now Serving';
+        if (numEl) numEl.innerText = data.ticket; if (nameEl) nameEl.innerText = data.name;
         if (locEl) locEl.innerText = data.window ? departmentLocations[data.dept] : `Please proceed to ${departmentLocations[data.dept]}`;
-        if (staffDisplay) staffDisplay.innerText = data.ticket;
-        updateMonitorWindow(data.dept, data.window); updateStaffWindowInfo(data.dept, data.window);
+        if (staffDisplay) staffDisplay.innerText = `${data.name} (${data.ticket})`;
+        updateMonitorWindow(data.dept, data.window); updateStaffWindowInfo(data.dept, data.window); updateStaffMetaInfo(data.dept, data.section, data.purpose);
         if (panelEl) { panelEl.classList.add('calling'); setTimeout(() => panelEl.classList.remove('calling'), 3000); }
         lastCalled[data.dept] = data; activeTicket[data.dept] = true; updateDismissBtn(data.dept);
-        if (Date.now() - data.time < 3000) { playDingSound(); setTimeout(() => announceTicket(data.ticket, data.dept, data.window), 900); }
+        if (Date.now() - data.time < 3000) { playDingSound(); setTimeout(() => announceTicket(data.name, data.ticket, data.dept, data.window), 900); }
     } else if (data && data.dept === 'NONE') {
         ['REGISTRAR','FINANCE'].forEach(d => { activeTicket[d] = false; updateDismissBtn(d); });
     }
@@ -1580,29 +1603,36 @@ db.ref('repeatCall').on('value', (snap) => {
     if (processedRepeatIds.has(data.id)) return;
     processedRepeatIds.add(data.id);
     if (Date.now() - data.time > 5000) return;
-    const { ticket, dept, window: windowNum, triggeredBy } = data;
+    const { name, ticket, dept, window: windowNum, triggeredBy } = data;
     const numEl = document.getElementById('mon-num-'+dept); const nameEl = document.getElementById('mon-name-'+dept); const locEl = document.getElementById('mon-location-'+dept); const panelEl = document.getElementById('panel-'+dept);
-    if (numEl) numEl.innerText = ticket; if (nameEl) nameEl.innerText = departmentLabels[dept] || 'Now Serving';
+    if (numEl) numEl.innerText = ticket; if (nameEl) nameEl.innerText = name;
     if (locEl) locEl.innerText = windowNum ? departmentLocations[dept] : `Please proceed to ${departmentLocations[dept]}`;
     updateMonitorWindow(dept, windowNum);
     if (panelEl) { panelEl.classList.remove('calling'); void panelEl.offsetWidth; panelEl.classList.add('calling'); setTimeout(() => panelEl.classList.remove('calling'), 4000); }
     ['REGISTRAR','FINANCE'].forEach(d => { const t = document.getElementById('repeat-toast-'+d); const by = document.getElementById('repeat-toast-by-'+d); if (!t) return; if (d===dept) { if (by) by.textContent = triggeredBy||'staff'; t.classList.add('visible'); clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('visible'),5000); } });
-    playDingSound(); setTimeout(() => announceTicket(ticket, dept, windowNum), 900);
+    playDingSound(); setTimeout(() => announceTicket(name, ticket, dept, windowNum), 900);
 });
 
 ['REGISTRAR','FINANCE'].forEach(dept => {
     db.ref('waiting_'+dept).on('value', (snap) => {
         const monEl = document.getElementById('next-list-'+dept); const queueEl = document.getElementById('queue-list-'+dept); const countEl = document.getElementById('count-'+dept);
-        queueData[dept] = {}; let count = 0;
+        queueData[dept] = {}; let count = 0; let latestName = null;
         if (monEl) monEl.innerHTML = ''; if (queueEl) queueEl.innerHTML = '';
         snap.forEach(child => {
             const row = child.val(); queueData[dept][child.key] = row; count++;
-            if (count <= 5 && monEl) { const div = document.createElement('div'); div.className='waiting-row'; const color = dept==='REGISTRAR'?'var(--accent-red)':'var(--accent-red-light)'; div.innerHTML=`<span>Waiting</span><b style="color:${color}">${row.ticket}</b>`; monEl.appendChild(div); }
-            if (queueEl) { const qi=document.createElement('div'); qi.className='queue-item'; qi.innerHTML=`<div class="queue-item-info"><div class="queue-item-ticket">${row.ticket}</div></div><div style="display:flex;gap:8px;flex-shrink:0;align-items:center;"><button class="call-specific-btn" onclick="callSpecific('${dept}','${child.key}')">Call</button><button class="delete-queue-btn" onclick="removeQueueItem(event,'${dept}','${child.key}')"><svg class="del-icon" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button></div>`; queueEl.appendChild(qi); }
+            if (count <= 5 && monEl) { const div = document.createElement('div'); div.className='waiting-row'; const color = dept==='REGISTRAR'?'var(--accent-red)':'var(--accent-red-light)'; div.innerHTML=`<span>${row.name}</span><b style="color:${color}">${row.ticket}</b>`; monEl.appendChild(div); }
+            if (queueEl) {
+                const metaParts = [];
+                if (row.section) metaParts.push(row.section);
+                if (row.purpose) metaParts.push(row.purpose);
+                const metaHTML = metaParts.length ? `<div class="queue-item-meta">${metaParts.join(' • ')}</div>` : '';
+                const qi=document.createElement('div'); qi.className='queue-item'; qi.innerHTML=`<div class="queue-item-info"><div class="queue-item-ticket">${row.ticket}</div><div class="queue-item-name">${row.name}</div>${metaHTML}</div><div style="display:flex;gap:8px;flex-shrink:0;align-items:center;"><button class="call-specific-btn" onclick="callSpecific('${dept}','${child.key}')">Call</button><button class="delete-queue-btn" onclick="removeQueueItem(event,'${dept}','${child.key}')"><svg class="del-icon" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button></div>`; queueEl.appendChild(qi);
+            }
         });
+        snap.forEach(child => { latestName = child.val().name; });
         if (countEl) countEl.innerText = count;
-        if (queueEl && count === 0) queueEl.innerHTML = '<p style="text-align:center; color: var(--text-muted); padding: 20px;">No one in queue</p>';
-        if (count > prevQueueCount[dept] && prevQueueCount[dept] >= 0) triggerQueueNotification(dept, count);
+        if (queueEl && count === 0) queueEl.innerHTML = '<p style="text-align:center; color: var(--text-muted); padding: 20px;">No students in queue</p>';
+        if (count > prevQueueCount[dept] && prevQueueCount[dept] >= 0) triggerQueueNotification(dept, count, latestName);
         prevQueueCount[dept] = count;
     });
 });
@@ -1610,64 +1640,64 @@ db.ref('repeatCall').on('value', (snap) => {
 // ===================== QUEUE FUNCTIONS =====================
 async function callNext(dept) {
     const snap = await db.ref('waiting_'+dept).limitToFirst(1).get();
-    if (snap.exists()) { const key=Object.keys(snap.val())[0]; const data=snap.val()[key]; await db.ref('waiting_'+dept+'/'+key).remove(); const sw=currentUserData?.window||null; await db.ref('currentCall').set({ticket:data.ticket,dept,window:sw,time:Date.now()}); }
-    else alert('No one in queue.');
+    if (snap.exists()) { const key=Object.keys(snap.val())[0]; const data=snap.val()[key]; await db.ref('waiting_'+dept+'/'+key).remove(); const sw=currentUserData?.window||null; await db.ref('currentCall').set({ticket:data.ticket,name:data.name,dept,window:sw,section:data.section||null,purpose:data.purpose||null,time:Date.now()}); }
+    else alert('No students in queue.');
 }
 async function callSpecific(dept, key) {
     const snap = await db.ref('waiting_'+dept+'/'+key).get();
-    if (snap.exists()) { const data=snap.val(); await db.ref('waiting_'+dept+'/'+key).remove(); const sw=currentUserData?.window||null; await db.ref('currentCall').set({ticket:data.ticket,dept,window:sw,time:Date.now()}); }
+    if (snap.exists()) { const data=snap.val(); await db.ref('waiting_'+dept+'/'+key).remove(); const sw=currentUserData?.window||null; await db.ref('currentCall').set({ticket:data.ticket,name:data.name,dept,window:sw,section:data.section||null,purpose:data.purpose||null,time:Date.now()}); }
 }
-async function removeQueueItem(event, dept, key) { event.stopPropagation(); const qi=event.target.closest('.queue-item'); if (!confirm('Remove this ticket from the queue?')) return; if (qi) { qi.classList.add('removing'); await new Promise(r=>setTimeout(r,280)); } await db.ref('waiting_'+dept+'/'+key).remove(); }
+async function removeQueueItem(event, dept, key) { event.stopPropagation(); const qi=event.target.closest('.queue-item'); if (!confirm('Remove this person from the queue?')) return; if (qi) { qi.classList.add('removing'); await new Promise(r=>setTimeout(r,280)); } await db.ref('waiting_'+dept+'/'+key).remove(); }
 async function repeatCall(dept) {
     if (!lastCalled[dept]) { alert('No ticket to repeat.'); return; }
-    const { ticket } = lastCalled[dept]; const triggeredBy=currentUserData?.name||currentUserData?.email||'Staff'; const sw=currentUserData?.window||null;
+    const { name, ticket } = lastCalled[dept]; const triggeredBy=currentUserData?.name||currentUserData?.email||'Staff'; const sw=currentUserData?.window||null;
     const repeatId=Date.now()+'_'+Math.random().toString(36).substr(2,6);
-    await db.ref('repeatCall').set({id:repeatId,ticket,dept,window:sw,triggeredBy,time:Date.now()});
+    await db.ref('repeatCall').set({id:repeatId,ticket,name,dept,window:sw,triggeredBy,time:Date.now()});
 }
 function switchDept(dept) { document.querySelectorAll('.dept-ws').forEach(d=>d.style.display='none'); document.querySelectorAll('.staff-sidebar button').forEach(b=>b.classList.remove('active-dept')); document.getElementById('ws-'+dept).style.display='block'; document.getElementById('btn-tab-'+dept).classList.add('active-dept'); }
 
-// ── GENERATE TICKET — TAP DEPARTMENT BUTTON, INSTANT TICKET + AUTO-PRINT ──
+// ── GENERATE TICKET — AUTO PRINTS IMMEDIATELY ────────────────────
 async function generateTicket(dept, prefix) {
-    if (kioskBusy) return; // debounce double taps
-    kioskBusy = true;
+    const input = document.getElementById('studentName');
+    const sectionInput = document.getElementById('studentSection');
+    const purposeInput = document.getElementById('studentPurpose');
+    const name = input.value.trim();
+    const section = sectionInput.value.trim();
+    const purpose = purposeInput.value.trim();
+    if (!name) { alert('Please enter your name'); return; }
 
-    try {
-        const snap = await db.ref('last_'+dept).get();
-        let num = (snap.val() || 0) + 1;
-        const ticketID = prefix + num.toString().padStart(3, '0');
-        await db.ref('last_'+dept).set(num);
-        await db.ref('waiting_'+dept).push({ ticket: ticketID });
+    const snap = await db.ref('last_'+dept).get();
+    let num = (snap.val() || 0) + 1;
+    const ticketID = prefix + num.toString().padStart(3, '0');
+    await db.ref('last_'+dept).set(num);
+    const queueEntry = { ticket: ticketID, name };
+    if (section) queueEntry.section = section;
+    if (purpose) queueEntry.purpose = purpose;
+    await db.ref('waiting_'+dept).push(queueEntry);
 
-        // Full-screen flash overlay with the new ticket number
-        const flashOverlay = document.getElementById('kioskFlashOverlay');
-        const flashTicket = document.getElementById('kioskFlashTicket');
-        flashTicket.innerText = ticketID;
-        flashOverlay.classList.add('active');
+    // Show ticket modal
+    document.getElementById('displayTicket').innerText = ticketID;
+    document.getElementById('displayName').innerText = name;
+    const metaParts = [];
+    if (section) metaParts.push('Section: ' + section);
+    if (purpose) metaParts.push('Purpose: ' + purpose);
+    document.getElementById('displayMeta').innerText = metaParts.join(' • ');
+    document.getElementById('displayLocation').innerText = `Please proceed to the ${departmentLocations[dept]}`;
+    document.getElementById('displayWindowBadge').classList.remove('visible');
+    clearPrintStatus();
+    document.getElementById('ticketModal').style.display = 'flex';
+    input.value = '';
+    sectionInput.value = '';
+    purposeInput.value = '';
 
-        // Ticket modal (kept for viewing/photo, no name field)
-        document.getElementById('displayTicket').innerText = ticketID;
-        document.getElementById('displayDept').innerText = departmentLabels[dept];
-        document.getElementById('displayLocation').innerText = `Please proceed to the ${departmentLocations[dept]}`;
-        document.getElementById('displayWindowBadge').classList.remove('visible');
-        clearPrintStatus();
+    // AUTO-PRINT: fires immediately, no delay needed
+    autoPrintTicket(name, ticketID, dept, null, section, purpose);
 
-        // AUTO-PRINT: fires immediately, no delay needed
-        autoPrintTicket(ticketID, dept, null);
-
-        setTimeout(() => {
-            flashOverlay.classList.remove('active');
-            document.getElementById('ticketModal').style.display = 'flex';
-        }, 1400);
-
-        setTimeout(closeModal, 1400 + 8000);
-    } finally {
-        setTimeout(() => { kioskBusy = false; }, 1200);
-    }
+    setTimeout(closeModal, 8000);
 }
 
 function closeModal() {
     document.getElementById('ticketModal').style.display = 'none';
-    document.getElementById('kioskFlashOverlay').classList.remove('active');
     clearPrintStatus();
 }
 
